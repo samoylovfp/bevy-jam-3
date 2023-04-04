@@ -1,6 +1,11 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-use bevy::prelude::*;
+use std::io::Cursor;
+
+use bevy::{
+    prelude::*,
+    render::{render_resource::Extent3d, texture::ImageSampler},
+};
 
 fn main() {
     App::new()
@@ -14,11 +19,24 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut images: ResMut<Assets<Image>>,
 ) {
+    include_flate::flate!(static BURN_TEX: [u8] from "assets/burn.png");
+    let img = image::io::Reader::new(Cursor::new(BURN_TEX.as_slice()))
+        .with_guessed_format()
+        .unwrap()
+        .decode()
+        .unwrap();
+    let mut img = Image::from_dynamic(img, false);
+    img.sampler_descriptor = ImageSampler::nearest();
+    let burn_tex = images.add(img);
+    let material = burn_tex.into();
+    let material = materials.add(material);
+
     // plane
     commands.spawn(PbrBundle {
         mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-        material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+        material,
         ..default()
     });
     // cube
