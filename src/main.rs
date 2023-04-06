@@ -29,9 +29,7 @@ fn setup(
         .unwrap();
     let mut img = Image::from_dynamic(img, false);
     img.sampler_descriptor = ImageSampler::nearest();
-    let burn_tex = images.add(img);
-    let material = burn_tex.into();
-    let material = materials.add(material);
+    let material = materials.add(images.add(img).into());
 
     // plane
     commands.spawn(PbrBundle {
