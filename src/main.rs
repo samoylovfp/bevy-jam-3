@@ -7,7 +7,7 @@ use bevy::{
     prelude::*,
 };
 use bevy_rapier3d::prelude::{
-    Collider, ComputedColliderShape, NoUserData, RapierPhysicsPlugin, RigidBody,
+    Collider, ComputedColliderShape, LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody,
 };
 use bevy_rapier3d::render::RapierDebugRenderPlugin;
 use serde::Deserialize;
@@ -24,24 +24,30 @@ fn main() {
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
         .insert_resource(CollidersLoaded(false))
-        .add_startup_system(setup_cam)
+        .add_startup_system(setup_player)
         .add_startup_system(spawn_gltf)
         .add_system(apply_gltf_extras.in_base_set(CoreSet::PreUpdate))
         .add_system(create_colliders.in_base_set(CoreSet::Update))
         .run();
 }
 
-fn setup_cam(mut cmd: Commands) {
+fn setup_player(mut cmd: Commands) {
     cmd.spawn(Camera3dBundle::default())
-        .insert(FpsCameraBundle::new(
-            FpsCameraController {
-                smoothing_weight: 0.0,
-                ..default()
+        .insert(RigidBody::Dynamic)
+        .insert(Collider::capsule(
+            Vec3 {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
             },
-            Vec3::new(0.0, 1.0, 0.0),
-            Vec3::new(-1., 1., 1.),
-            Vec3::Y,
-        ));
+            Vec3 {
+                x: 0.0,
+                y: 1.7,
+                z: 0.0,
+            },
+            0.4,
+        ))
+        .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z);
 }
 
 fn spawn_gltf(
@@ -83,13 +89,13 @@ struct NodeMeta {
 fn apply_gltf_extras(
     mut cmd: Commands,
     gltf_extras: Query<(Entity, &GltfExtras, &Transform), Without<Camera>>,
-    mut cam: Query<&mut LookTransform, With<Camera>>,
+    mut cam: Query<&mut Transform, With<Camera>>,
 ) {
     for (ent, gltf_extras, transform) in gltf_extras.iter() {
         let meta: NodeMeta = serde_json::from_str(&gltf_extras.value).unwrap();
         match meta.role.as_str() {
-            "PlayerSpawn" => cam.single_mut().eye = transform.translation,
-            "PlayerSpawnLookAt" => cam.single_mut().target = transform.translation,
+            "PlayerSpawn" => cam.single_mut().translation = transform.translation,
+            "PlayerSpawnLookAt" => cam.single_mut().look_at(transform.translation, Vec3::Y),
             r => panic!("Unknown role {r}"),
         }
         cmd.entity(ent).despawn_recursive()
