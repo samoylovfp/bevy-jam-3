@@ -1,5 +1,6 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
+use bevy::input::mouse::MouseMotion;
 use bevy::utils::HashSet;
 
 use bevy::{
@@ -7,20 +8,15 @@ use bevy::{
     prelude::*,
 };
 use bevy_rapier3d::prelude::{
-    Collider, ComputedColliderShape, LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody,
+    Collider, ComputedColliderShape, KinematicCharacterController, LockedAxes, NoUserData,
+    RapierPhysicsPlugin, RigidBody,
 };
 use bevy_rapier3d::render::RapierDebugRenderPlugin;
 use serde::Deserialize;
-use smooth_bevy_cameras::{
-    controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
-    LookTransform, LookTransformPlugin,
-};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_plugin(LookTransformPlugin)
-        .add_plugin(FpsCameraPlugin::default())
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
         .insert_resource(CollidersLoaded(false))
@@ -28,12 +24,16 @@ fn main() {
         .add_startup_system(spawn_gltf)
         .add_system(apply_gltf_extras.in_base_set(CoreSet::PreUpdate))
         .add_system(create_colliders.in_base_set(CoreSet::Update))
+        .add_system(movement)
+        .add_system(debug_pos)
         .run();
 }
 
 fn setup_player(mut cmd: Commands) {
+    // Body
     cmd.spawn(Camera3dBundle::default())
-        .insert(RigidBody::Dynamic)
+        .insert(KinematicCharacterController::default())
+        .insert(RigidBody::KinematicPositionBased)
         .insert(Collider::capsule(
             Vec3 {
                 x: 0.0,
@@ -42,12 +42,19 @@ fn setup_player(mut cmd: Commands) {
             },
             Vec3 {
                 x: 0.0,
-                y: 1.7,
+                y: 0.9,
                 z: 0.0,
             },
             0.4,
         ))
         .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z);
+        // .with_children(|parent| {
+        //     // head
+        //     parent.spawn((Camera3dBundle {
+        //         transform: Transform::from_xyz(0.0, 0.8, 0.0),
+        //         ..default()
+        //     },));
+        // });
 }
 
 fn spawn_gltf(
@@ -57,7 +64,7 @@ fn spawn_gltf(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // note that we have to include the `Scene0` label
-    let my_gltf = ass.load("bvj-3-lib.gltf#Scene0");
+    let my_gltf = ass.load("bvj-3-lib.glb#Scene0");
 
     // to position our 3d model, simply use the Transform
     // in the SceneBundle
@@ -145,5 +152,38 @@ fn create_colliders(
     );
     if colliders > 0 {
         loaded.0 = true;
+    }
+}
+
+fn movement(
+    keyboard: Res<Input<KeyCode>>,
+    mut mouse_motion_events: EventReader<MouseMotion>,
+    mut player: Query<&mut KinematicCharacterController>,
+) {
+    // let look_direction =
+    let mut translation = Vec3::ZERO;
+    for (key, dir) in [
+        (KeyCode::W, Vec3::Z),
+        (KeyCode::A, Vec3::X),
+        (KeyCode::S, -Vec3::Z),
+        (KeyCode::D, -Vec3::X),
+    ] {
+        if keyboard.pressed(key) {
+            translation += 0.1 * dir;
+        }
+    }
+    for mut p in player.iter_mut() {
+        p.translation = Some(translation);
+    }
+}
+
+fn debug_pos(
+    pos: Query<
+        (&Transform, &GlobalTransform),
+        Or<(With<Camera>, With<KinematicCharacterController>)>,
+    >,
+) {
+    for (i, (t, g)) in pos.iter().enumerate() {
+        println!("{i} {:?} {:?}", t.translation, g.translation());
     }
 }

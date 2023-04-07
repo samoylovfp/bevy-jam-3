@@ -289,7 +289,6 @@ dependencies = [
  "include-flate",
  "serde",
  "serde_json",
- "smooth-bevy-cameras",
 ]
 
 [[package]]
@@ -3113,16 +3112,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a507befe795404456341dfab10cef66ead4c041f62b8b11bbb92bffe5d0953e0"
 dependencies = [
  "serde",
-]
-
-[[package]]
-name = "smooth-bevy-cameras"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9aeb233071a219a5eb6357e2e48a284ba891da6b8ed92c1c26774fe184146af6"
-dependencies = [
- "approx",
- "bevy",
 ]
 
 [[package]]

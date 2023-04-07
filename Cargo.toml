@@ -12,7 +12,6 @@ image = "0.24.6"
 include-flate = { version = "0.2.0", features = ["stable"] }
 serde = { version = "1.0.159", features = ["derive"] }
 serde_json = "1.0.95"
-smooth-bevy-cameras = "0.8.0"
 
 [profile.dev.package."*"]
 opt-level = 3
