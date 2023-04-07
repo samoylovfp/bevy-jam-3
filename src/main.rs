@@ -14,6 +14,12 @@ use bevy_rapier3d::prelude::{
 use bevy_rapier3d::render::RapierDebugRenderPlugin;
 use serde::Deserialize;
 
+#[derive(Component)]
+struct PlayerBody;
+
+#[derive(Component)]
+struct PlayerHead;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -30,8 +36,16 @@ fn main() {
 }
 
 fn setup_player(mut cmd: Commands) {
-    // Body
-    cmd.spawn(Camera3dBundle::default())
+    // For some stupid reason KinematicCharacterControl does not work without camera
+    // so we add a disabled one
+    cmd.spawn(PlayerBody)
+        .insert(Camera3dBundle {
+            camera: Camera {
+                is_active: false,
+                ..default()
+            },
+            ..default()
+        })
         .insert(KinematicCharacterController::default())
         .insert(RigidBody::KinematicPositionBased)
         .insert(Collider::capsule(
@@ -47,14 +61,17 @@ fn setup_player(mut cmd: Commands) {
             },
             0.4,
         ))
-        .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z);
-        // .with_children(|parent| {
-        //     // head
-        //     parent.spawn((Camera3dBundle {
-        //         transform: Transform::from_xyz(0.0, 0.8, 0.0),
-        //         ..default()
-        //     },));
-        // });
+        .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z)
+        .with_children(|parent| {
+            // head
+            parent.spawn((
+                PlayerHead,
+                Camera3dBundle {
+                    transform: Transform::from_xyz(0.0, 0.8, 0.0),
+                    ..default()
+                },
+            ));
+        });
 }
 
 fn spawn_gltf(
@@ -95,14 +112,19 @@ struct NodeMeta {
 
 fn apply_gltf_extras(
     mut cmd: Commands,
-    gltf_extras: Query<(Entity, &GltfExtras, &Transform), Without<Camera>>,
-    mut cam: Query<&mut Transform, With<Camera>>,
+    gltf_extras: Query<
+        (Entity, &GltfExtras, &Transform),
+        (Without<PlayerBody>, Without<PlayerHead>),
+    >,
+    mut body: Query<&mut Transform, (With<PlayerBody>, Without<PlayerHead>)>,
+    mut head: Query<&mut Transform, (With<PlayerHead>, Without<PlayerBody>)>,
 ) {
     for (ent, gltf_extras, transform) in gltf_extras.iter() {
         let meta: NodeMeta = serde_json::from_str(&gltf_extras.value).unwrap();
+
         match meta.role.as_str() {
-            "PlayerSpawn" => cam.single_mut().translation = transform.translation,
-            "PlayerSpawnLookAt" => cam.single_mut().look_at(transform.translation, Vec3::Y),
+            "PlayerSpawn" => body.single_mut().translation = transform.translation,
+            "PlayerSpawnLookAt" => head.single_mut().look_at(transform.translation, Vec3::Y),
             r => panic!("Unknown role {r}"),
         }
         cmd.entity(ent).despawn_recursive()
@@ -158,23 +180,22 @@ fn create_colliders(
 fn movement(
     keyboard: Res<Input<KeyCode>>,
     mut mouse_motion_events: EventReader<MouseMotion>,
-    mut player: Query<&mut KinematicCharacterController>,
+    mut body: Query<&mut KinematicCharacterController>,
+    mut head: Query<&mut Transform, With<PlayerHead>>,
 ) {
-    // let look_direction =
+    let look_direction = head.single();
     let mut translation = Vec3::ZERO;
-    for (key, dir) in [
-        (KeyCode::W, Vec3::Z),
-        (KeyCode::A, Vec3::X),
-        (KeyCode::S, -Vec3::Z),
-        (KeyCode::D, -Vec3::X),
+    for (key, move_direction) in [
+        (KeyCode::W, look_direction.forward()),
+        (KeyCode::A, look_direction.left()),
+        (KeyCode::S, look_direction.back()),
+        (KeyCode::D, look_direction.right()),
     ] {
         if keyboard.pressed(key) {
-            translation += 0.1 * dir;
+            translation += 0.1 * move_direction;
         }
     }
-    for mut p in player.iter_mut() {
-        p.translation = Some(translation);
-    }
+    body.single_mut().translation = Some(translation);
 }
 
 fn debug_pos(
@@ -184,6 +205,6 @@ fn debug_pos(
     >,
 ) {
     for (i, (t, g)) in pos.iter().enumerate() {
-        println!("{i} {:?} {:?}", t.translation, g.translation());
+        // println!("{i} {:?} {:?}", t.translation, g.translation());
     }
 }
