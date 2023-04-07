@@ -38,17 +38,18 @@ fn main() {
 fn setup_player(mut cmd: Commands) {
     // For some stupid reason KinematicCharacterControl does not work without camera
     // so we add a disabled one
-    cmd.spawn(PlayerBody)
-        .insert(Camera3dBundle {
+    cmd.spawn((
+        PlayerBody,
+        Camera3dBundle {
             camera: Camera {
                 is_active: false,
                 ..default()
             },
             ..default()
-        })
-        .insert(KinematicCharacterController::default())
-        .insert(RigidBody::KinematicPositionBased)
-        .insert(Collider::capsule(
+        },
+        KinematicCharacterController::default(),
+        RigidBody::KinematicPositionBased,
+        Collider::capsule(
             Vec3 {
                 x: 0.0,
                 y: 0.0,
@@ -60,18 +61,19 @@ fn setup_player(mut cmd: Commands) {
                 z: 0.0,
             },
             0.4,
-        ))
-        .insert(LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z)
-        .with_children(|parent| {
-            // head
-            parent.spawn((
-                PlayerHead,
-                Camera3dBundle {
-                    transform: Transform::from_xyz(0.0, 0.8, 0.0),
-                    ..default()
-                },
-            ));
-        });
+        ),
+        LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z,
+    ))
+    .with_children(|parent| {
+        // head
+        parent.spawn((
+            PlayerHead,
+            Camera3dBundle {
+                transform: Transform::from_xyz(0.0, 0.8, 0.0),
+                ..default()
+            },
+        ));
+    });
 }
 
 fn spawn_gltf(
