@@ -611,6 +611,19 @@
 			]
 		}
 	],
+	"materials":[
+		{
+			"doubleSided":true,
+			"name":"Material",
+			"pbrMetallicRoughness":{
+				"baseColorTexture":{
+					"index":0
+				},
+				"metallicFactor":0,
+				"roughnessFactor":0.5
+			}
+		}
+	],
 	"meshes":[
 		{
 			"name":"Cube.001",
@@ -816,7 +829,8 @@
 						"TEXCOORD_0":51,
 						"NORMAL":52
 					},
-					"indices":7
+					"indices":7,
+					"material":0
 				}
 			]
 		},
@@ -1248,6 +1262,19 @@
 					"indices":149
 				}
 			]
+		}
+	],
+	"textures":[
+		{
+			"sampler":0,
+			"source":0
+		}
+	],
+	"images":[
+		{
+			"mimeType":"image/png",
+			"name":"burn",
+			"uri":"burn.png"
 		}
 	],
 	"accessors":[
@@ -3578,6 +3605,12 @@
 			"byteLength":288,
 			"byteOffset":112868,
 			"target":34962
+		}
+	],
+	"samplers":[
+		{
+			"magFilter":9729,
+			"minFilter":9987
 		}
 	],
 	"buffers":[
