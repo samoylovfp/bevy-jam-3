@@ -1,12 +1,6 @@
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
-use std::io::Cursor;
-
-use bevy::{
-    gltf::GltfExtras,
-    pbr::LightEntity,
-    prelude::*,
-};
+use bevy::{gltf::GltfExtras, prelude::*};
 use serde::Deserialize;
 use smooth_bevy_cameras::{
     controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
@@ -67,6 +61,6 @@ fn apply_gltf_extras(
             "PlayerSpawnLookAt" => cam.single_mut().target = transform.translation,
             r => panic!("Unknown role {r}"),
         }
-        cmd.entity(ent).despawn();
+        cmd.entity(ent).despawn_recursive()
     }
 }
