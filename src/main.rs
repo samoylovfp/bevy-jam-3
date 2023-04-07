@@ -3,60 +3,70 @@
 use std::io::Cursor;
 
 use bevy::{
+    gltf::GltfExtras,
+    pbr::LightEntity,
     prelude::*,
-    render::{render_resource::Extent3d, texture::ImageSampler},
+};
+use serde::Deserialize;
+use smooth_bevy_cameras::{
+    controllers::fps::{FpsCameraBundle, FpsCameraController, FpsCameraPlugin},
+    LookTransform, LookTransformPlugin,
 };
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
-        .add_startup_system(setup)
+        .add_plugin(LookTransformPlugin)
+        .add_plugin(FpsCameraPlugin::default())
+        .add_startup_system(setup_cam)
+        .add_startup_system(spawn_gltf)
+        .add_system(apply_gltf_extras)
         .run();
 }
 
-/// set up a simple 3D scene
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut images: ResMut<Assets<Image>>,
-) {
-    include_flate::flate!(static BURN_TEX: [u8] from "assets/burn.png");
-    let img = image::io::Reader::new(Cursor::new(BURN_TEX.as_slice()))
-        .with_guessed_format()
-        .unwrap()
-        .decode()
-        .unwrap();
-    let mut img = Image::from_dynamic(img, false);
-    img.sampler_descriptor = ImageSampler::nearest();
-    let material = materials.add(images.add(img).into());
+fn setup_cam(mut cmd: Commands) {
+    cmd.spawn(Camera3dBundle::default())
+        .insert(FpsCameraBundle::new(
+            FpsCameraController {
+                smoothing_weight: 0.0,
+                ..default()
+            },
+            Vec3::new(0.0, 1.0, 0.0),
+            Vec3::new(-1., 1., 1.),
+            Vec3::Y,
+        ));
+}
 
-    // plane
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(shape::Plane::from_size(5.0).into()),
-        material,
-        ..default()
+fn spawn_gltf(mut commands: Commands, ass: Res<AssetServer>) {
+    // note that we have to include the `Scene0` label
+    let my_gltf = ass.load("bvj-3-lib.gltf#Scene0");
+
+    // to position our 3d model, simply use the Transform
+    // in the SceneBundle
+    commands.spawn(SceneBundle {
+        scene: my_gltf,
+        transform: Transform::from_xyz(0.0, 0.0, 0.0),
+        ..Default::default()
     });
-    // cube
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_xyz(0.0, 0.5, 0.0),
-        ..default()
-    });
-    // light
-    commands.spawn(PointLightBundle {
-        point_light: PointLight {
-            intensity: 1500.0,
-            shadows_enabled: true,
-            ..default()
-        },
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..default()
-    });
-    // camera
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(-2.0, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        ..default()
-    });
+}
+
+#[derive(Deserialize)]
+struct NodeMeta {
+    role: String,
+}
+
+fn apply_gltf_extras(
+    mut cmd: Commands,
+    gltf_extras: Query<(Entity, &GltfExtras, &Transform), Without<Camera>>,
+    mut cam: Query<&mut LookTransform, With<Camera>>,
+) {
+    for (ent, gltf_extras, transform) in gltf_extras.iter() {
+        let meta: NodeMeta = serde_json::from_str(&gltf_extras.value).unwrap();
+        match meta.role.as_str() {
+            "PlayerSpawn" => cam.single_mut().eye = transform.translation,
+            "PlayerSpawnLookAt" => cam.single_mut().target = transform.translation,
+            r => panic!("Unknown role {r}"),
+        }
+        cmd.entity(ent).despawn();
+    }
 }
