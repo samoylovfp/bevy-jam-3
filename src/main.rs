@@ -7,6 +7,9 @@ use bevy::{
     gltf::{GltfExtras, GltfMesh, GltfNode},
     prelude::*,
 };
+use bevy::window::CursorGrabMode;
+use bevy::window::Window;
+
 use bevy_rapier3d::prelude::{
     Collider, ComputedColliderShape, ExternalForce, ExternalImpulse, KinematicCharacterController,
     LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody, Velocity,
@@ -24,6 +27,7 @@ struct PlayerHead;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_system(grab_mouse)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .add_plugin(RapierDebugRenderPlugin::default())
         .insert_resource(CollidersLoaded(false))
@@ -317,5 +321,26 @@ fn change_size(
             GrowthState::Big => effects.width_state = GrowthState::Decreasing,
             _ => (),
         };
+    }
+}
+
+
+// This system grabs the mouse when the left mouse button is pressed
+// and releases it when the escape key is pressed
+fn grab_mouse(
+    mut windows: Query<&mut Window>,
+    mouse: Res<Input<MouseButton>>,
+    key: Res<Input<KeyCode>>,
+) {
+    let mut window = windows.single_mut();
+
+    if mouse.just_pressed(MouseButton::Left) {
+        window.cursor.visible = false;
+        window.cursor.grab_mode = CursorGrabMode::Locked;
+    }
+
+    if key.just_pressed(KeyCode::Escape) {
+        window.cursor.visible = true;
+        window.cursor.grab_mode = CursorGrabMode::None;
     }
 }
