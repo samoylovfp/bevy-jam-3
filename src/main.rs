@@ -13,6 +13,7 @@ use bevy_rapier3d::prelude::{
 };
 use bevy_rapier3d::render::RapierDebugRenderPlugin;
 use serde::Deserialize;
+use smooth_bevy_cameras::LookAngles;
 
 #[derive(Component)]
 struct PlayerBody;
@@ -24,7 +25,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(RapierDebugRenderPlugin::default())
+        // .add_plugin(RapierDebugRenderPlugin::default())
         .insert_resource(CollidersLoaded(false))
         .add_startup_system(setup_player)
         .add_startup_system(spawn_gltf)
@@ -68,6 +69,7 @@ fn setup_player(mut cmd: Commands) {
         // head
         parent.spawn((
             PlayerHead,
+            ViewDirection(LookAngles::default()),
             Camera3dBundle {
                 transform: Transform::from_xyz(0.0, 0.8, 0.0),
                 ..default()
@@ -126,6 +128,7 @@ fn apply_gltf_extras(
 
         match meta.role.as_str() {
             "PlayerSpawn" => body.single_mut().translation = transform.translation,
+            // TODO: broken, need to change ViewDirection instead, and include body orientation
             "PlayerSpawnLookAt" => head.single_mut().look_at(transform.translation, Vec3::Y),
             r => panic!("Unknown role {r}"),
         }
@@ -179,22 +182,36 @@ fn create_colliders(
     }
 }
 
+#[derive(Component)]
+struct ViewDirection(LookAngles);
+
 fn movement(
     keyboard: Res<Input<KeyCode>>,
     mut mouse_motion_events: EventReader<MouseMotion>,
     mut body: Query<&mut KinematicCharacterController>,
-    mut head: Query<&mut Transform, With<PlayerHead>>,
+    mut head: Query<(&mut Transform, &mut ViewDirection), With<PlayerHead>>,
 ) {
-    let look_direction = head.single();
+    let mouse_sensitivity = 0.001;
+    let (mut head_transform, mut look_angles) = head.single_mut();
+    let input_delta: Vec2 = mouse_motion_events.into_iter().map(|e| e.delta).sum();
+
+    look_angles.0.add_pitch(-input_delta.y * mouse_sensitivity);
+    look_angles.0.add_yaw(-input_delta.x * mouse_sensitivity);
+    head_transform.look_at(look_angles.0.unit_vector(), Vec3::Y);
+
     let mut translation = Vec3::ZERO;
     for (key, move_direction) in [
-        (KeyCode::W, look_direction.forward()),
-        (KeyCode::A, look_direction.left()),
-        (KeyCode::S, look_direction.back()),
-        (KeyCode::D, look_direction.right()),
+        (KeyCode::W, head_transform.forward()),
+        (KeyCode::A, head_transform.left()),
+        (KeyCode::S, head_transform.back()),
+        (KeyCode::D, head_transform.right()),
     ] {
         if keyboard.pressed(key) {
-            translation += 0.1 * move_direction;
+            translation += 0.1
+                * Vec3 {
+                    y: 0.0,
+                    ..move_direction
+                };
         }
     }
     body.single_mut().translation = Some(translation);
