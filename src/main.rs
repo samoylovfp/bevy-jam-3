@@ -33,6 +33,7 @@ fn main() {
         .add_system(create_colliders.in_base_set(CoreSet::Update))
         .add_system(movement)
         .add_system(debug_pos)
+        .add_system(change_size)
         .run();
 }
 
@@ -51,6 +52,12 @@ fn setup_player(mut cmd: Commands) {
 
     cmd.spawn((
         PlayerBody,
+        PlayerEffects {
+            height: 1.0,
+            width: 1.0,
+            height_state: GrowthState::Big,
+            width_state: GrowthState::Big,
+        },
         Camera3dBundle {
             camera: Camera {
                 is_active: false,
@@ -61,10 +68,7 @@ fn setup_player(mut cmd: Commands) {
         RigidBody::Dynamic,
         ExternalImpulse::default(),
         Velocity::default(),
-        Collider::capsule_y(
-            capsule_segment_half_height,
-            capsule_diameter / 2.0,
-        ),
+        Collider::capsule_y(capsule_segment_half_height, capsule_diameter / 2.0),
         LockedAxes::ROTATION_LOCKED,
     ))
     .with_children(|parent| {
@@ -231,5 +235,87 @@ fn movement(
 fn debug_pos(pos: Query<(&Transform, &GlobalTransform), Or<(With<PlayerHead>, With<PlayerBody>)>>) {
     for (i, (t, g)) in pos.iter().enumerate() {
         // println!("{i} {:?} {:?}", t.translation, g.translation());
+    }
+}
+
+#[derive(Component)]
+struct PlayerEffects {
+    height: f32,
+    width: f32,
+    height_state: GrowthState,
+    width_state: GrowthState,
+}
+
+#[derive(PartialEq)]
+enum GrowthState {
+    Small,
+    Big,
+    Increasing,
+    Decreasing,
+}
+
+fn change_size(
+    keyboard: Res<Input<KeyCode>>,
+    mut body: Query<(&mut Transform, &mut PlayerEffects), With<PlayerBody>>,
+) {
+    let (mut body, mut effects) = body.single_mut();
+
+    match effects.height_state {
+        GrowthState::Increasing => {
+            body.scale.y += 0.02;
+            effects.height += 0.02;
+            if effects.height > 1.0 {
+                body.scale.y = 1.0;
+                effects.height = 1.0;
+                effects.height_state = GrowthState::Big;
+            }
+        }
+        GrowthState::Decreasing => {
+            body.scale.y -= 0.02;
+            effects.height -= 0.02;
+            if effects.height < 0.5 {
+                body.scale.y = 0.5;
+                effects.height = 0.5;
+                effects.height_state = GrowthState::Small;
+            }
+        }
+        _ => (),
+    }
+
+    match effects.width_state {
+        GrowthState::Increasing => {
+            body.scale.x += 0.02;
+            effects.width += 0.02;
+            if effects.width > 1.0 {
+                body.scale.x = 1.0;
+                effects.width = 1.0;
+                effects.width_state = GrowthState::Big;
+            }
+        }
+        GrowthState::Decreasing => {
+            body.scale.x -= 0.02;
+            effects.width -= 0.02;
+            if effects.width < 0.5 {
+                body.scale.x = 0.5;
+                effects.width = 0.5;
+                effects.width_state = GrowthState::Small;
+            }
+        }
+        _ => (),
+    }
+
+    if keyboard.pressed(KeyCode::B) {
+        match effects.height_state {
+            GrowthState::Small => effects.height_state = GrowthState::Increasing,
+            GrowthState::Big => effects.height_state = GrowthState::Decreasing,
+            _ => (),
+        };
+    }
+    if keyboard.pressed(KeyCode::N) {
+        match effects.width_state {
+            GrowthState::Small => effects.width_state = GrowthState::Increasing,
+            GrowthState::Big => effects.width_state = GrowthState::Decreasing,
+            _ => (),
+        };
     }
 }
