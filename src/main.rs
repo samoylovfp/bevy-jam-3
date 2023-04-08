@@ -25,7 +25,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        // .add_plugin(RapierDebugRenderPlugin::default())
+        .add_plugin(RapierDebugRenderPlugin::default())
         .insert_resource(CollidersLoaded(false))
         .add_startup_system(setup_player)
         .add_startup_system(spawn_gltf)
@@ -58,10 +58,10 @@ fn setup_player(mut cmd: Commands) {
             },
             Vec3 {
                 x: 0.0,
-                y: 0.9,
+                y: 0.1,
                 z: 0.0,
             },
-            0.4,
+            0.15,
         ),
         LockedAxes::ROTATION_LOCKED_X | LockedAxes::ROTATION_LOCKED_Z,
     ))
@@ -71,7 +71,7 @@ fn setup_player(mut cmd: Commands) {
             PlayerHead,
             ViewDirection(LookAngles::default()),
             Camera3dBundle {
-                transform: Transform::from_xyz(0.0, 0.8, 0.0),
+                transform: Transform::from_xyz(0.0, 0.2, 0.0),
                 ..default()
             },
         ));
@@ -85,7 +85,7 @@ fn spawn_gltf(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // note that we have to include the `Scene0` label
-    let my_gltf = ass.load("bvj-3-lib.glb#Scene0");
+    let my_gltf = ass.load("bvj-3-level-6.glb#Scene0");
 
     // to position our 3d model, simply use the Transform
     // in the SceneBundle
@@ -125,6 +125,7 @@ fn apply_gltf_extras(
 ) {
     for (ent, gltf_extras, transform) in gltf_extras.iter() {
         let meta: NodeMeta = serde_json::from_str(&gltf_extras.value).unwrap();
+        info!("Found role {:?}", meta.role);
 
         match meta.role.as_str() {
             "PlayerSpawn" => body.single_mut().translation = transform.translation,
