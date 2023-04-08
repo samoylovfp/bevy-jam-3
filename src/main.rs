@@ -1,22 +1,25 @@
+// Unfortunately component queries are pretty involved
+// make clippy not worry about them
+#![allow(clippy::type_complexity)]
+
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
 use bevy::input::mouse::MouseMotion;
 use bevy::utils::HashSet;
 
-use bevy::{
-    gltf::{GltfExtras, GltfMesh, GltfNode},
-    prelude::*,
-};
 use bevy::window::CursorGrabMode;
 use bevy::window::Window;
+use bevy::{
+    gltf::{GltfExtras, GltfMesh},
+    prelude::*,
+};
 
 use bevy_rapier3d::prelude::{
-    Collider, ComputedColliderShape, ExternalForce, ExternalImpulse, KinematicCharacterController,
+    Collider, ComputedColliderShape, ExternalImpulse,
     LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody, Velocity,
 };
 use bevy_rapier3d::render::RapierDebugRenderPlugin;
 use serde::Deserialize;
-use smooth_bevy_cameras::LookAngles;
 
 #[derive(Component)]
 struct PlayerBody;
@@ -79,7 +82,6 @@ fn setup_player(mut cmd: Commands) {
         // head
         parent.spawn((
             PlayerHead,
-            ViewDirection(LookAngles::default()),
             Camera3dBundle {
                 transform: Transform::from_xyz(0.0, capsule_total_half_height * eyes_height, 0.0),
                 ..default()
@@ -126,12 +128,8 @@ struct NodeMeta {
 
 fn apply_gltf_extras(
     mut cmd: Commands,
-    gltf_extras: Query<
-        (Entity, &GltfExtras, &Transform),
-        (Without<PlayerBody>, Without<PlayerHead>),
-    >,
-    mut body: Query<&mut Transform, (With<PlayerBody>, Without<PlayerHead>)>,
-    mut head: Query<&mut Transform, (With<PlayerHead>, Without<PlayerBody>)>,
+    gltf_extras: Query<(Entity, &GltfExtras, &Transform), Without<PlayerBody>>,
+    mut body: Query<&mut Transform, With<PlayerBody>>,
 ) {
     for (ent, gltf_extras, transform) in gltf_extras.iter() {
         let meta: NodeMeta = serde_json::from_str(&gltf_extras.value).unwrap();
@@ -140,8 +138,14 @@ fn apply_gltf_extras(
         match meta.role.as_str() {
             "PlayerSpawn" => body.single_mut().translation = transform.translation,
             // TODO: broken, need to change ViewDirection instead, and include body orientation
-            "PlayerSpawnLookAt" => head.single_mut().look_at(transform.translation, Vec3::Y),
-            r => panic!("Unknown role {r}"),
+            "PlayerSpawnLookAt" => {
+                let mut body_transform = body.single_mut();
+                let mut target = transform.translation;
+                // So we dont tilt the body
+                target.y = body_transform.translation.y;
+                body_transform.look_at(target, Vec3::Y);
+            }
+            r => warn!("Unknown role {r}"),
         }
         cmd.entity(ent).despawn_recursive()
     }
@@ -193,30 +197,30 @@ fn create_colliders(
     }
 }
 
-#[derive(Component)]
-struct ViewDirection(LookAngles);
-
 fn movement(
     keyboard: Res<Input<KeyCode>>,
     mut mouse_motion_events: EventReader<MouseMotion>,
-    mut body: Query<(&Velocity, &mut ExternalImpulse), With<PlayerBody>>,
-    mut head: Query<(&mut Transform, &mut ViewDirection), With<PlayerHead>>,
+    mut body: Query<
+        (&Velocity, &mut Transform, &mut ExternalImpulse),
+        (With<PlayerBody>, Without<PlayerHead>),
+    >,
+    mut head: Query<&mut Transform, (With<PlayerHead>, Without<PlayerBody>)>,
 ) {
     let mouse_sensitivity = 0.001;
-    let (mut head_transform, mut look_angles) = head.single_mut();
+    let mut head_transform = head.single_mut();
+    let (body_vel, mut body_transform, mut body_forces) = body.single_mut();
+
     let input_delta: Vec2 = mouse_motion_events.into_iter().map(|e| e.delta).sum();
 
-    look_angles.0.add_pitch(-input_delta.y * mouse_sensitivity);
-    look_angles.0.add_yaw(-input_delta.x * mouse_sensitivity);
-    let look_at = head_transform.translation + look_angles.0.unit_vector();
-    head_transform.look_at(look_at, Vec3::Y);
+    body_transform.rotate_y(-input_delta.x * mouse_sensitivity);
+    head_transform.rotate_local_x(-input_delta.y * mouse_sensitivity);
 
     let mut desired_velocity = Vec3::ZERO;
     for (key, move_direction) in [
-        (KeyCode::W, head_transform.forward()),
-        (KeyCode::A, head_transform.left()),
-        (KeyCode::S, head_transform.back()),
-        (KeyCode::D, head_transform.right()),
+        (KeyCode::W, body_transform.forward()),
+        (KeyCode::A, body_transform.left()),
+        (KeyCode::S, body_transform.back()),
+        (KeyCode::D, body_transform.right()),
     ] {
         if keyboard.pressed(key) {
             desired_velocity += Vec3 {
@@ -225,7 +229,6 @@ fn movement(
             };
         }
     }
-    let (body_vel, mut body_forces) = body.single_mut();
 
     let max_speed = 5.0;
     let accel = 0.03;
@@ -238,7 +241,7 @@ fn movement(
 
 fn debug_pos(pos: Query<(&Transform, &GlobalTransform), Or<(With<PlayerHead>, With<PlayerBody>)>>) {
     for (i, (t, g)) in pos.iter().enumerate() {
-        // println!("{i} {:?} {:?}", t.translation, g.translation());
+        debug!("{i} {:?} {:?}", t.translation, g.translation());
     }
 }
 
@@ -323,7 +326,6 @@ fn change_size(
         };
     }
 }
-
 
 // This system grabs the mouse when the left mouse button is pressed
 // and releases it when the escape key is pressed
