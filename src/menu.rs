@@ -3,11 +3,11 @@ use bevy::{
     prelude::*,
     utils::HashSet,
 };
-use bevy_rapier3d::prelude::{Collider, ComputedColliderShape, RigidBody};
+use bevy_rapier3d::prelude::{ActiveEvents, Collider, ComputedColliderShape, RigidBody, Sensor};
 
 use crate::{
     post_processing::GameCamera, AppState, CameraMenu, CollidersLoaded, NodeMeta, PlayerBody,
-    PlayerHead, PlayerSpawn,
+    PlayerSpawn,
 };
 
 pub(crate) fn activate_menu_camera(
@@ -20,12 +20,21 @@ pub(crate) fn activate_menu_camera(
         .for_each(|mut c| c.is_active = false);
 }
 
+#[derive(Component)]
+pub struct MenuScreen;
+
 pub fn spawn_menu_screen(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(SpriteBundle {
-        texture: asset_server.load("screens/start_screen.png"),
-        ..default()
-    });
+    commands.spawn((
+        SpriteBundle {
+            texture: asset_server.load("screens/start_screen.png"),
+            ..default()
+        },
+        MenuScreen,
+    ));
 }
+
+#[derive(Component)]
+pub struct ExitLevel;
 
 pub fn apply_gltf_extras(
     mut cmd: Commands,
@@ -66,7 +75,22 @@ pub fn apply_gltf_extras(
                     cmd.entity(ent).despawn_recursive()
                 }
             }
-            "ExitLevel" => cmd.entity(ent).despawn_recursive(),
+            "ExitLevel" => {
+                for child in ent_children {
+                    let Ok(mesh_handle) = bevy_mesh_components.get(*child) else {continue};
+                    let mesh = bevy_meshes.get(mesh_handle).unwrap();
+                    let collider = Collider::from_bevy_mesh(mesh, &default()).unwrap();
+                    cmd.spawn((
+                        ExitLevel,
+                        collider,
+                        *transform,
+                        Sensor,
+                        ActiveEvents::COLLISION_EVENTS,
+                        GlobalTransform::default(),
+                    ));
+                }
+                cmd.entity(ent).despawn_recursive();
+            }
             r => warn!("Unknown role {r}"),
         }
     }
@@ -116,7 +140,7 @@ pub fn create_colliders(
 }
 
 pub fn start_game(keyboard: Res<Input<KeyCode>>, mut next_state: ResMut<NextState<AppState>>) {
-    if keyboard.pressed(KeyCode::G) {
+    if keyboard.pressed(KeyCode::Space) {
         next_state.set(AppState::InGame);
     }
 }

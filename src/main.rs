@@ -4,6 +4,7 @@
 
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
+mod finish;
 mod game;
 mod menu;
 mod post_processing;
@@ -78,9 +79,13 @@ fn main() {
                 game::debug_pos,
                 game::change_size,
                 game::back_to_menu,
+                game::exit_level,
             )
                 .in_set(OnUpdate(AppState::InGame)),
         )
+        .add_system(menu::activate_menu_camera.in_schedule(OnEnter(AppState::Finish)))
+        .add_system(finish::spawn_finish_screen.in_schedule(OnEnter(AppState::Finish)))
+        .add_system(finish::restart.in_set(OnUpdate(AppState::Finish)))
         .add_system(bevy::window::close_on_esc)
         .run();
 }

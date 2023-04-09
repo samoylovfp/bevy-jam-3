@@ -2,8 +2,8 @@ use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_rapier3d::prelude::{CollisionEvent, ExternalImpulse, Velocity};
 
 use crate::{
-    post_processing::GameCamera, AppState, CameraMenu, PlayerBody, PlayerHead, PlayerLegs,
-    PlayerSpawn,
+    menu::ExitLevel, post_processing::GameCamera, AppState, CameraMenu, PlayerBody, PlayerHead,
+    PlayerLegs, PlayerSpawn,
 };
 
 pub(crate) fn activate_game_camera(
@@ -192,6 +192,26 @@ pub(crate) fn touch_ground(
                 if legs_comp.touching_objects == 0 {
                     info!("Off ground!");
                 }
+            }
+            _ => {}
+        }
+    }
+}
+
+pub(crate) fn exit_level(
+    mut collision_events: EventReader<CollisionEvent>,
+    player: Query<Entity, With<PlayerBody>>,
+    exit: Query<Entity, With<ExitLevel>>,
+    mut next_state: ResMut<NextState<AppState>>,
+) {
+    let player = player.single();
+    let exit = exit.single();
+    for event in collision_events.iter() {
+        match event {
+            CollisionEvent::Started(e1, e2, _)
+                if (e1 == &exit || e2 == &exit) && (e1 == &player || e2 == &player) =>
+            {
+                next_state.set(AppState::Finish);
             }
             _ => {}
         }
