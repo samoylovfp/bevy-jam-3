@@ -1,8 +1,12 @@
 use bevy::{prelude::*, gltf::{GltfExtras, GltfMesh}, utils::HashSet};
 use bevy_rapier3d::prelude::{Collider, RigidBody, ComputedColliderShape};
 
-use crate::{PlayerBody, PlayerSpawn, NodeMeta, CollidersLoaded, AppState};
+use crate::{PlayerBody, PlayerSpawn, NodeMeta, CollidersLoaded, AppState, CameraMenu, PlayerHead};
 
+pub fn activate_menu_camera(mut camera_menu: Query<&mut Camera, (With<CameraMenu>, Without<PlayerHead>)>, mut camera_player: Query<&mut Camera, (With<PlayerHead>, Without<CameraMenu>)>) {
+	camera_player.single_mut().is_active = false;
+	camera_menu.single_mut().is_active = true;
+}
 
 pub fn apply_gltf_extras(
     mut cmd: Commands,

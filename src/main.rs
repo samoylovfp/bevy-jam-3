@@ -12,7 +12,6 @@ use bevy::window::CursorGrabMode;
 use bevy::window::Window;
 
 use bevy_rapier3d::prelude::ActiveEvents;
-use bevy_rapier3d::prelude::CollisionEvent;
 use bevy_rapier3d::prelude::Sensor;
 use bevy_rapier3d::prelude::{
     Collider, ExternalImpulse, LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody, Velocity,
@@ -46,6 +45,9 @@ struct PlayerLegs {
     touching_objects: usize,
 }
 
+#[derive(Component)]
+pub struct CameraMenu;
+
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -55,7 +57,9 @@ fn main() {
         .insert_resource(CollidersLoaded(false))
         .add_startup_system(spawn_gltf)
         .add_startup_system(setup_player)
+		.add_startup_system(spawn_menu_camera)
 		.add_system(menu::apply_gltf_extras.in_base_set(CoreSet::PreUpdate))
+		.add_system(menu::activate_menu_camera.in_schedule(OnEnter(AppState::Menu)))
         .add_systems(
             (
                 menu::create_colliders,
@@ -63,7 +67,8 @@ fn main() {
             )
                 .in_set(OnUpdate(AppState::Menu)),
         )
-        .add_system(game::spawn_player.in_schedule(OnEnter(AppState::InGame)))
+        .add_system(game::activate_game_camera.in_schedule(OnEnter(AppState::InGame)))
+		.add_system(game::spawn_player.in_schedule(OnEnter(AppState::InGame)))
         .add_systems(
             (
                 game::touch_ground,
@@ -75,6 +80,13 @@ fn main() {
                 .in_set(OnUpdate(AppState::InGame)),
         )
         .run();
+}
+
+fn spawn_menu_camera(mut cmd: Commands) {
+	cmd.spawn((Camera2dBundle {
+		transform: Transform::from_xyz(0.0, 0.0, 0.0),
+                ..default()
+	}, CameraMenu));
 }
 
 fn setup_player(mut cmd: Commands) {
@@ -133,6 +145,10 @@ fn setup_player(mut cmd: Commands) {
         parent.spawn((
             PlayerHead,
             Camera3dBundle {
+				camera: Camera {
+					is_active: false,
+					..default()
+				},
                 transform: Transform::from_xyz(0.0, capsule_total_half_height * eyes_height, 0.0),
                 ..default()
             },
