@@ -31,7 +31,6 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_system(grab_mouse)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
-        .add_plugin(RapierDebugRenderPlugin::default())
         .insert_resource(CollidersLoaded(false))
         .add_startup_system(setup_player)
         .add_startup_system(spawn_gltf)
