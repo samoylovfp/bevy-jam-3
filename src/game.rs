@@ -18,6 +18,8 @@ pub fn spawn_player(mut player: Query<(&mut Transform, &PlayerSpawn, &mut Player
 	effects.width = 1.0;
 	effects.height_state = GrowthState::Big;
 	effects.width_state = GrowthState::Big;
+	player.scale.x = 1.0;
+	player.scale.y = 1.0;
 }
 
 pub fn movement(
