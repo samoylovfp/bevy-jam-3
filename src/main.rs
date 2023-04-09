@@ -6,8 +6,11 @@
 
 mod game;
 mod menu;
+mod post_processing;
 
 use bevy::prelude::*;
+use bevy::render::camera::RenderTarget;
+use bevy::sprite::Material2dPlugin;
 use bevy::window::CursorGrabMode;
 use bevy::window::Window;
 
@@ -18,6 +21,9 @@ use bevy_rapier3d::prelude::{
 };
 use game::GrowthState;
 use game::PlayerEffects;
+use post_processing::setup_postpro;
+use post_processing::BVJPostProcessing;
+use post_processing::GameCamera;
 use serde::Deserialize;
 
 /// Move and yaw
@@ -51,25 +57,20 @@ pub struct CameraMenu;
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugin(Material2dPlugin::<BVJPostProcessing>::default())
+        .add_startup_system(setup_postpro.pipe(setup_player))
         .add_state::<AppState>()
         .add_system(grab_mouse)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .insert_resource(CollidersLoaded(false))
         .add_startup_system(spawn_gltf)
-        .add_startup_system(setup_player)
-		.add_startup_system(spawn_menu_camera)
-		.add_system(menu::apply_gltf_extras.in_base_set(CoreSet::PreUpdate))
-		.add_system(menu::activate_menu_camera.in_schedule(OnEnter(AppState::Menu)))
-		.add_system(menu::spawn_menu_screen.in_schedule(OnEnter(AppState::Menu)))
-        .add_systems(
-            (
-                menu::create_colliders,
-                menu::start_game,
-            )
-                .in_set(OnUpdate(AppState::Menu)),
-        )
+        .add_startup_system(spawn_menu_camera)
+        .add_system(menu::apply_gltf_extras.in_base_set(CoreSet::PreUpdate))
+        .add_system(menu::activate_menu_camera.in_schedule(OnEnter(AppState::Menu)))
+        .add_system(menu::spawn_menu_screen.in_schedule(OnEnter(AppState::Menu)))
+        .add_systems((menu::create_colliders, menu::start_game).in_set(OnUpdate(AppState::Menu)))
         .add_system(game::activate_game_camera.in_schedule(OnEnter(AppState::InGame)))
-		.add_system(game::spawn_player.in_schedule(OnEnter(AppState::InGame)))
+        .add_system(game::spawn_player.in_schedule(OnEnter(AppState::InGame)))
         .add_systems(
             (
                 game::touch_ground,
@@ -80,18 +81,24 @@ fn main() {
             )
                 .in_set(OnUpdate(AppState::InGame)),
         )
-		.add_system(bevy::window::close_on_esc)
+        .add_system(bevy::window::close_on_esc)
         .run();
 }
 
 fn spawn_menu_camera(mut cmd: Commands) {
-	cmd.spawn((Camera2dBundle {
-		transform: Transform::from_xyz(0.0, 0.0, 0.0),
-                ..default()
-	}, CameraMenu));
+    cmd.spawn((
+        Camera2dBundle {
+            transform: Transform::from_xyz(0.0, 0.0, 0.0),
+            ..default()
+        },
+        CameraMenu,
+    ));
 }
 
-fn setup_player(mut cmd: Commands) {
+#[derive(Resource)]
+struct RenderTargetImage(Handle<Image>);
+
+fn setup_player(In(RenderTargetImage(render_target)): In<RenderTargetImage>, mut cmd: Commands) {
     // For some stupid reason KinematicCharacterControl does not work without camera
     // so we add a disabled one
 
@@ -128,14 +135,7 @@ fn setup_player(mut cmd: Commands) {
             height_state: GrowthState::Big,
             width_state: GrowthState::Big,
         },
-        // Camera3dBundle {
-        //     camera: Camera {
-        //         is_active: false,
-        //         ..default()
-        //     },
-        //     ..default()
-        // },
-		TransformBundle::default(),
+        TransformBundle::default(),
         RigidBody::Dynamic,
         ExternalImpulse::default(),
         Velocity::default(),
@@ -146,11 +146,13 @@ fn setup_player(mut cmd: Commands) {
         // head
         parent.spawn((
             PlayerHead,
+            GameCamera,
             Camera3dBundle {
-				camera: Camera {
-					is_active: false,
-					..default()
-				},
+                camera: Camera {
+                    is_active: false,
+                    target: RenderTarget::Image(render_target),
+                    ..default()
+                },
                 transform: Transform::from_xyz(0.0, capsule_total_half_height * eyes_height, 0.0),
                 ..default()
             },

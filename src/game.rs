@@ -1,11 +1,19 @@
 use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_rapier3d::prelude::{CollisionEvent, ExternalImpulse, Velocity};
 
-use crate::{AppState, PlayerBody, PlayerHead, PlayerLegs, PlayerSpawn, CameraMenu};
+use crate::{
+    post_processing::GameCamera, AppState, CameraMenu, PlayerBody, PlayerHead, PlayerLegs,
+    PlayerSpawn,
+};
 
-pub fn activate_game_camera(mut camera_menu: Query<&mut Camera, (With<CameraMenu>, Without<PlayerHead>)>, mut camera_player: Query<&mut Camera, (With<PlayerHead>, Without<CameraMenu>)>) {
-	camera_menu.single_mut().is_active = false;
-	camera_player.single_mut().is_active = true;
+pub(crate) fn activate_game_camera(
+    mut camera_menu: Query<&mut Camera, (With<CameraMenu>, Without<GameCamera>)>,
+    mut camera_player: Query<&mut Camera, (With<GameCamera>, Without<CameraMenu>)>,
+) {
+    camera_menu.single_mut().is_active = false;
+    camera_player
+        .iter_mut()
+        .for_each(|mut c| c.is_active = true);
 }
 
 pub fn spawn_player(
