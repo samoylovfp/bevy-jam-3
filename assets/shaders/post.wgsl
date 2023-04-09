@@ -14,15 +14,16 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     // Get screen position with coordinates from 0 to 1
     let uv = coords_to_viewport_uv(position.xy, view.viewport);
-    let offset_strength = 0.02;
+    let blur_strength = 0.002;
 
-    // Sample each color channel with an arbitrary shift
-    var output_color = vec4<f32>(
-        textureSample(texture, our_sampler, uv + vec2<f32>(offset_strength, -offset_strength)).r,
-        textureSample(texture, our_sampler, uv + vec2<f32>(-offset_strength, 0.0)).g,
-        textureSample(texture, our_sampler, uv + vec2<f32>(0.0, offset_strength)).b,
-        1.0
-    );
+    var output_color = vec4<f32>();
+    // 5-point blur
+    for (var x=-2; x<=2; x++) {
+        for (var y=-2; y<=2; y++) {
+            var px_strength = abs(max(f32(x), 1.0) * max(f32(y), 1.0));
+            output_color += textureSample(texture, our_sampler, uv + vec2<f32>(f32(x)*blur_strength, f32(y)*blur_strength))/px_strength/20.0;
+        }
+    }
 
     return output_color;
 }
