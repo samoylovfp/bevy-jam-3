@@ -1,7 +1,7 @@
 use bevy::{
     prelude::{
         default, shape, Assets, Camera, Camera2dBundle, Commands, Component, Handle, Image, Mesh,
-        Query, ResMut, Transform, Vec2, Vec3,
+        Query, ResMut, Transform, Vec2, Vec3, Color, Vec4,
     },
     reflect::TypeUuid,
     render::{
@@ -25,7 +25,7 @@ pub(crate) struct BVJPostProcessing {
     #[sampler(1)]
     source_image: Handle<Image>,
     #[uniform(2)]
-    blur_strength: f32,
+    blur_strength: Vec4,
 }
 
 impl Material2d for BVJPostProcessing {
@@ -85,7 +85,7 @@ pub(crate) fn setup_postpro(
     // This material has the texture that has been rendered.
     let material_handle = post_processing_materials.add(BVJPostProcessing {
         source_image: image_handle.clone(),
-        blur_strength: 0.002,
+        blur_strength: Vec4::ZERO,
     });
 
     // Post processing 2d quad, with material using the render texture done by the main camera, with a custom shader.
@@ -131,5 +131,5 @@ pub(crate) fn change_blur(
         .next()
         .unwrap()
         .1
-        .blur_strength = blur_strength;
+        .blur_strength[0] = blur_strength;
 }

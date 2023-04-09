@@ -8,7 +8,7 @@ var texture: texture_2d<f32>;
 var our_sampler: sampler;
 
 @group(1) @binding(2)
-var<uniform> blur_strength: f32;
+var<uniform> blur_strength: vec4<f32>;
 
 @fragment
 fn fragment(
@@ -25,7 +25,7 @@ fn fragment(
     for (var x=-resolution; x<=resolution; x++) {
         for (var y=-resolution; y<=resolution; y++) {
             let px_strength = abs(max(f32(x*2), 1.0) * max(f32(y*2), 1.0));
-            output_color += textureSample(texture, our_sampler, uv + vec2<f32>(f32(x)*blur_strength, f32(y)*blur_strength))
+            output_color += textureSample(texture, our_sampler, uv + vec2<f32>(f32(x)*blur_strength.x, f32(y)*blur_strength.x))
                 /px_strength
                 /4.0
                 /f32(resolution*resolution);
