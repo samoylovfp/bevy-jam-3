@@ -16,12 +16,17 @@ fn fragment(
     let uv = coords_to_viewport_uv(position.xy, view.viewport);
     let blur_strength = 0.002;
 
+    let resolution = 2;
+
     var output_color = vec4<f32>();
-    // 5-point blur
-    for (var x=-2; x<=2; x++) {
-        for (var y=-2; y<=2; y++) {
-            var px_strength = abs(max(f32(x), 1.0) * max(f32(y), 1.0));
-            output_color += textureSample(texture, our_sampler, uv + vec2<f32>(f32(x)*blur_strength, f32(y)*blur_strength))/px_strength/20.0;
+
+    for (var x=-resolution; x<=resolution; x++) {
+        for (var y=-resolution; y<=resolution; y++) {
+            let px_strength = abs(max(f32(x*2), 1.0) * max(f32(y*2), 1.0));
+            output_color += textureSample(texture, our_sampler, uv + vec2<f32>(f32(x)*blur_strength, f32(y)*blur_strength))
+                /px_strength
+                /4.0
+                /f32(resolution*resolution);
         }
     }
 
