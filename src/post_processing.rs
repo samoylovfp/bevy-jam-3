@@ -16,7 +16,7 @@ use bevy::{
     window::Window,
 };
 
-use crate::RenderTargetImage;
+use crate::{game::PlayerEffects, RenderTargetImage};
 
 #[derive(AsBindGroup, TypeUuid, Clone)]
 #[uuid = "bc2f08eb-a0fb-43f1-a908-54871ea597d5"]
@@ -24,6 +24,8 @@ pub(crate) struct BVJPostProcessing {
     #[texture(0)]
     #[sampler(1)]
     source_image: Handle<Image>,
+    #[uniform(2)]
+    blur_strength: f32,
 }
 
 impl Material2d for BVJPostProcessing {
@@ -83,6 +85,7 @@ pub(crate) fn setup_postpro(
     // This material has the texture that has been rendered.
     let material_handle = post_processing_materials.add(BVJPostProcessing {
         source_image: image_handle.clone(),
+        blur_strength: 0.002,
     });
 
     // Post processing 2d quad, with material using the render texture done by the main camera, with a custom shader.
@@ -115,4 +118,18 @@ pub(crate) fn setup_postpro(
     ));
 
     RenderTargetImage(image_handle)
+}
+
+pub(crate) fn change_blur(
+    mut post_processing_materials: ResMut<Assets<BVJPostProcessing>>,
+    effects: Query<&PlayerEffects>,
+) {
+    let eff = effects.single();
+    let blur_strength = (eff.height + eff.width - 1.0) / 200.0;
+    post_processing_materials
+        .iter_mut()
+        .next()
+        .unwrap()
+        .1
+        .blur_strength = blur_strength;
 }

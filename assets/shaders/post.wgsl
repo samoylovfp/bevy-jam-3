@@ -7,6 +7,9 @@ var texture: texture_2d<f32>;
 @group(1) @binding(1)
 var our_sampler: sampler;
 
+@group(1) @binding(2)
+var<uniform> blur_strength: f32;
+
 @fragment
 fn fragment(
     @builtin(position) position: vec4<f32>,
@@ -14,7 +17,6 @@ fn fragment(
 ) -> @location(0) vec4<f32> {
     // Get screen position with coordinates from 0 to 1
     let uv = coords_to_viewport_uv(position.xy, view.viewport);
-    let blur_strength = 0.002;
 
     let resolution = 2;
 

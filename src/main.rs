@@ -80,6 +80,7 @@ fn main() {
                 game::change_size,
                 game::back_to_menu,
                 game::exit_level,
+                post_processing::change_blur,
             )
                 .in_set(OnUpdate(AppState::InGame)),
         )
