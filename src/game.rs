@@ -12,8 +12,6 @@ pub fn spawn_player(mut player: Query<(&mut Transform, &PlayerSpawn, &mut Player
 	target.y = player.translation.y;
 	player.look_at(target, Vec3::Y);
 
-	println!("move player to {}", player.translation);
-
 	effects.height = 1.0;
 	effects.width = 1.0;
 	effects.height_state = GrowthState::Big;

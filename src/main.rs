@@ -44,9 +44,9 @@ fn main() {
         .insert_resource(CollidersLoaded(false))
         .add_startup_system(spawn_gltf)
         .add_startup_system(setup_player)
+		.add_system(menu::apply_gltf_extras.in_base_set(CoreSet::PreUpdate))
         .add_systems(
             (
-                menu::apply_gltf_extras,
                 menu::create_colliders,
                 menu::start_game,
             )
@@ -98,13 +98,14 @@ fn setup_player(mut cmd: Commands) {
             height_state: GrowthState::Big,
             width_state: GrowthState::Big,
         },
-        Camera3dBundle {
-            camera: Camera {
-                is_active: false,
-                ..default()
-            },
-            ..default()
-        },
+        // Camera3dBundle {
+        //     camera: Camera {
+        //         is_active: false,
+        //         ..default()
+        //     },
+        //     ..default()
+        // },
+		TransformBundle::default(),
         RigidBody::Dynamic,
         ExternalImpulse::default(),
         Velocity::default(),
