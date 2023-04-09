@@ -7,7 +7,11 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.10.1"
-bevy_rapier3d = { version = "0.21.0", features = ["debug-render-3d", "simd-stable"] }
+bevy_rapier3d = { version = "0.21.0", default-features = false, features = [
+    "simd-stable",
+    "dim3",
+    "async-collider",
+] }
 image = "0.24.6"
 include-flate = { version = "0.2.0", features = ["stable"] }
 serde = { version = "1.0.159", features = ["derive"] }

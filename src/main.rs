@@ -18,7 +18,6 @@ use bevy_rapier3d::prelude::{
     Collider, ComputedColliderShape, ExternalImpulse,
     LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody, Velocity,
 };
-use bevy_rapier3d::render::RapierDebugRenderPlugin;
 use serde::Deserialize;
 
 #[derive(Component)]

@@ -7,3 +7,7 @@ colliders from gltf mesh: https://discord.com/channels/691052431525675048/937158
 ## Exporting gltf from blender:
 
 - File -> Export -> glTF 2.0 -> either gltf or glb. Include -> Data -> "Custom Properties" & "Punctual Lights"
+
+## Building for web
+
+trunk build --release --public-url . && sed -ri 's#/./#./#g' dist/index.html
