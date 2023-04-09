@@ -60,6 +60,7 @@ fn main() {
 		.add_startup_system(spawn_menu_camera)
 		.add_system(menu::apply_gltf_extras.in_base_set(CoreSet::PreUpdate))
 		.add_system(menu::activate_menu_camera.in_schedule(OnEnter(AppState::Menu)))
+		.add_system(menu::spawn_menu_screen.in_schedule(OnEnter(AppState::Menu)))
         .add_systems(
             (
                 menu::create_colliders,
@@ -79,6 +80,7 @@ fn main() {
             )
                 .in_set(OnUpdate(AppState::InGame)),
         )
+		.add_system(bevy::window::close_on_esc)
         .run();
 }
 

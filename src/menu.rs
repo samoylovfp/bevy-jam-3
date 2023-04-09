@@ -8,6 +8,13 @@ pub fn activate_menu_camera(mut camera_menu: Query<&mut Camera, (With<CameraMenu
 	camera_menu.single_mut().is_active = true;
 }
 
+pub fn spawn_menu_screen(mut commands: Commands, asset_server: Res<AssetServer>) {
+	commands.spawn(SpriteBundle {
+        texture: asset_server.load("screens/start_screen.png"),
+        ..default()
+    });
+}
+
 pub fn apply_gltf_extras(
     mut cmd: Commands,
     gltf_extras: Query<(Entity, &GltfExtras, &Transform, &Children), Without<PlayerBody>>,
