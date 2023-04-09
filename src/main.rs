@@ -15,8 +15,8 @@ use bevy::{
 };
 
 use bevy_rapier3d::prelude::{
-    Collider, ComputedColliderShape, ExternalImpulse,
-    LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody, Velocity,
+    Collider, ComputedColliderShape, ExternalImpulse, LockedAxes, NoUserData, RapierPhysicsPlugin,
+    RigidBody, Velocity,
 };
 use serde::Deserialize;
 
@@ -95,7 +95,7 @@ fn spawn_gltf(
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     // note that we have to include the `Scene0` label
-    let my_gltf = ass.load("bvj-3-level-6.glb#Scene0");
+    let my_gltf = ass.load("bvj-3-level-7.glb#Scene0");
 
     // to position our 3d model, simply use the Transform
     // in the SceneBundle
@@ -126,15 +126,20 @@ struct NodeMeta {
 
 fn apply_gltf_extras(
     mut cmd: Commands,
-    gltf_extras: Query<(Entity, &GltfExtras, &Transform), Without<PlayerBody>>,
+    gltf_extras: Query<(Entity, &GltfExtras, &Transform, &Children), Without<PlayerBody>>,
     mut body: Query<&mut Transform, With<PlayerBody>>,
+    bevy_meshes: Res<Assets<Mesh>>,
+    bevy_mesh_components: Query<&Handle<Mesh>>,
 ) {
-    for (ent, gltf_extras, transform) in gltf_extras.iter() {
+    for (ent, gltf_extras, transform, ent_children) in gltf_extras.iter() {
         let meta: NodeMeta = serde_json::from_str(&gltf_extras.value).unwrap();
         info!("Found role {:?}", meta.role);
 
         match meta.role.as_str() {
-            "PlayerSpawn" => body.single_mut().translation = transform.translation,
+            "PlayerSpawn" => {
+                body.single_mut().translation = transform.translation;
+                cmd.entity(ent).despawn_recursive()
+            }
             // TODO: broken, need to change ViewDirection instead, and include body orientation
             "PlayerSpawnLookAt" => {
                 let mut body_transform = body.single_mut();
@@ -142,10 +147,29 @@ fn apply_gltf_extras(
                 // So we dont tilt the body
                 target.y = body_transform.translation.y;
                 body_transform.look_at(target, Vec3::Y);
+                cmd.entity(ent).despawn_recursive()
             }
+            "Collider" => {
+                let mut coll_created = false;
+                for child in ent_children {
+                    let Ok(mesh_handle) = bevy_mesh_components.get(*child) else {continue};
+                    let mesh = bevy_meshes.get(mesh_handle).unwrap();
+                    dbg!(mesh.attribute(Mesh::ATTRIBUTE_POSITION));
+                    let collider = Collider::from_bevy_mesh(
+                        mesh,
+                        &default(),
+                    )
+                    .unwrap();
+                    cmd.spawn(dbg!((RigidBody::Fixed, collider, *transform, GlobalTransform::default())));
+                    coll_created = true;
+                }
+                if coll_created {
+                    cmd.entity(ent).despawn_recursive()
+                }
+            }
+            "ExitLevel" => cmd.entity(ent).despawn_recursive(),
             r => warn!("Unknown role {r}"),
         }
-        cmd.entity(ent).despawn_recursive()
     }
 }
 
