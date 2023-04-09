@@ -11,6 +11,9 @@ use bevy::prelude::*;
 use bevy::window::CursorGrabMode;
 use bevy::window::Window;
 
+use bevy_rapier3d::prelude::ActiveEvents;
+use bevy_rapier3d::prelude::CollisionEvent;
+use bevy_rapier3d::prelude::Sensor;
 use bevy_rapier3d::prelude::{
     Collider, ExternalImpulse, LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody, Velocity,
 };
@@ -18,12 +21,14 @@ use game::GrowthState;
 use game::PlayerEffects;
 use serde::Deserialize;
 
+/// Move and yaw
 #[derive(Component)]
 pub struct PlayerBody;
 
 #[derive(Component)]
 pub struct PlayerHead;
 
+/// Pitch
 #[derive(Component)]
 pub struct PlayerSpawn((Vec3, Vec3));
 
@@ -33,6 +38,12 @@ pub enum AppState {
     Menu,
     InGame,
     Finish,
+}
+
+/// Check if touching the floor
+#[derive(Component)]
+struct PlayerLegs {
+    touching_objects: usize,
 }
 
 fn main() {
@@ -55,6 +66,7 @@ fn main() {
         .add_system(game::spawn_player.in_schedule(OnEnter(AppState::InGame)))
         .add_systems(
             (
+                game::touch_ground,
                 game::movement,
                 game::debug_pos,
                 game::change_size,
@@ -77,6 +89,10 @@ fn setup_player(mut cmd: Commands) {
     let capsule_total_half_height = capsule_total_height / 2.0;
     let capsule_segment_half_height = capsule_total_half_height - (capsule_diameter / 2.0);
     let eyes_height = 0.93;
+    // so the player cannot climb walls
+    let leg_with_ratio = 0.9;
+    // so legs keep in contact with surface while skipping
+    let leg_down_margin = 0.1;
 
     cmd.spawn((
         PlayerBody,
@@ -120,6 +136,16 @@ fn setup_player(mut cmd: Commands) {
                 transform: Transform::from_xyz(0.0, capsule_total_half_height * eyes_height, 0.0),
                 ..default()
             },
+        ));
+        // legs
+        parent.spawn((
+            PlayerLegs {
+                touching_objects: 0,
+            },
+            Collider::ball(capsule_diameter / 2.0 * leg_with_ratio),
+            Transform::from_xyz(0.0, -capsule_total_half_height - leg_down_margin, 0.0),
+            Sensor,
+            ActiveEvents::COLLISION_EVENTS,
         ));
     });
 }

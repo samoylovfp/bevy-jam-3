@@ -30,13 +30,12 @@ pub fn apply_gltf_extras(
                 for child in ent_children {
                     let Ok(mesh_handle) = bevy_mesh_components.get(*child) else {continue};
                     let mesh = bevy_meshes.get(mesh_handle).unwrap();
-                    dbg!(mesh.attribute(Mesh::ATTRIBUTE_POSITION));
                     let collider = Collider::from_bevy_mesh(
                         mesh,
                         &default(),
                     )
                     .unwrap();
-                    cmd.spawn(dbg!((RigidBody::Fixed, collider, *transform, GlobalTransform::default())));
+                    cmd.spawn((RigidBody::Fixed, collider, *transform, GlobalTransform::default()));
                     coll_created = true;
                 }
                 if coll_created {
@@ -96,7 +95,7 @@ pub fn start_game(
 	keyboard: Res<Input<KeyCode>>,
     mut next_state: ResMut<NextState<AppState>>
 ) {
-	if keyboard.pressed(KeyCode::Space) {
+	if keyboard.pressed(KeyCode::G) {
 		next_state.set(AppState::InGame);
 	}
 }

@@ -1,26 +1,28 @@
-use bevy::{prelude::*, input::mouse::MouseMotion};
-use bevy_rapier3d::prelude::{Velocity, ExternalImpulse};
+use bevy::{input::mouse::MouseMotion, prelude::*};
+use bevy_rapier3d::prelude::{CollisionEvent, ExternalImpulse, Velocity};
 
-use crate::{PlayerSpawn, PlayerBody, PlayerHead, AppState};
+use crate::{AppState, PlayerBody, PlayerHead, PlayerLegs, PlayerSpawn};
 
-pub fn spawn_player(mut player: Query<(&mut Transform, &PlayerSpawn, &mut PlayerEffects), With<PlayerBody>>) {
-	let (mut player, spawn, mut effects) = player.single_mut();
+pub fn spawn_player(
+    mut player: Query<(&mut Transform, &PlayerSpawn, &mut PlayerEffects), With<PlayerBody>>,
+) {
+    let (mut player, spawn, mut effects) = player.single_mut();
 
-	player.translation = spawn.0.0;
-	let mut target = spawn.0.1;
-	// So we dont tilt the body
-	target.y = player.translation.y;
-	player.look_at(target, Vec3::Y);
+    player.translation = spawn.0 .0;
+    let mut target = spawn.0 .1;
+    // So we dont tilt the body
+    target.y = player.translation.y;
+    player.look_at(target, Vec3::Y);
 
-	effects.height = 1.0;
-	effects.width = 1.0;
-	effects.height_state = GrowthState::Big;
-	effects.width_state = GrowthState::Big;
-	player.scale.x = 1.0;
-	player.scale.y = 1.0;
+    effects.height = 1.0;
+    effects.width = 1.0;
+    effects.height_state = GrowthState::Big;
+    effects.width_state = GrowthState::Big;
+    player.scale.x = 1.0;
+    player.scale.y = 1.0;
 }
 
-pub fn movement(
+pub(crate) fn movement(
     keyboard: Res<Input<KeyCode>>,
     mut mouse_motion_events: EventReader<MouseMotion>,
     mut body: Query<
@@ -28,10 +30,12 @@ pub fn movement(
         (With<PlayerBody>, Without<PlayerHead>),
     >,
     mut head: Query<&mut Transform, (With<PlayerHead>, Without<PlayerBody>)>,
+    legs: Query<&PlayerLegs>,
 ) {
     let mouse_sensitivity = 0.001;
     let mut head_transform = head.single_mut();
     let (body_vel, mut body_transform, mut body_forces) = body.single_mut();
+    let legs = legs.single();
 
     let input_delta: Vec2 = mouse_motion_events.into_iter().map(|e| e.delta).sum();
 
@@ -44,12 +48,10 @@ pub fn movement(
         (KeyCode::A, body_transform.left()),
         (KeyCode::S, body_transform.back()),
         (KeyCode::D, body_transform.right()),
+        (KeyCode::Space, Vec3::Y),
     ] {
         if keyboard.pressed(key) {
-            desired_velocity += Vec3 {
-                y: 0.0,
-                ..move_direction
-            };
+            desired_velocity += move_direction
         }
     }
 
@@ -58,11 +60,14 @@ pub fn movement(
 
     body_forces.impulse =
         (desired_velocity.normalize_or_zero() * max_speed - body_vel.linvel) * accel;
-    // Forbid flying
-    body_forces.impulse.y = 0.0;
+    if legs.touching_objects == 0 {
+        body_forces.impulse.y = 0.0;
+    }
 }
 
-pub fn debug_pos(pos: Query<(&Transform, &GlobalTransform), Or<(With<PlayerHead>, With<PlayerBody>)>>) {
+pub fn debug_pos(
+    pos: Query<(&Transform, &GlobalTransform), Or<(With<PlayerHead>, With<PlayerBody>)>>,
+) {
     for (i, (t, g)) in pos.iter().enumerate() {
         debug!("{i} {:?} {:?}", t.translation, g.translation());
     }
@@ -150,11 +155,32 @@ pub fn change_size(
     }
 }
 
-pub fn back_to_menu(
-	keyboard: Res<Input<KeyCode>>,
-    mut next_state: ResMut<NextState<AppState>>
+pub fn back_to_menu(keyboard: Res<Input<KeyCode>>, mut next_state: ResMut<NextState<AppState>>) {
+    if keyboard.pressed(KeyCode::M) {
+        next_state.set(AppState::Menu);
+    }
+}
+
+pub(crate) fn touch_ground(
+    mut collision_events: EventReader<CollisionEvent>,
+    mut legs: Query<(Entity, &mut PlayerLegs)>,
 ) {
-	if keyboard.pressed(KeyCode::Space) {
-		next_state.set(AppState::Menu);
-	}
+    let (legs_ent, mut legs_comp) = legs.single_mut();
+    for event in collision_events.iter() {
+        match event {
+            CollisionEvent::Started(e1, e2, _) if e1 == &legs_ent || e2 == &legs_ent => {
+                legs_comp.touching_objects += 1;
+                if legs_comp.touching_objects == 1 {
+                    info!("On ground!");
+                }
+            }
+            CollisionEvent::Stopped(e1, e2, _) if e1 == &legs_ent || e2 == &legs_ent => {
+                legs_comp.touching_objects -= 1;
+                if legs_comp.touching_objects == 0 {
+                    info!("Off ground!");
+                }
+            }
+            _ => {}
+        }
+    }
 }
