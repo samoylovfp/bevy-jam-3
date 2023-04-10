@@ -69,6 +69,7 @@ fn main() {
         .add_system(grab_mouse)
         .add_system(check_triggers)
         .add_event::<GameTrigger>()
+		.add_event::<hud::SubtitleTrigger>()
         .add_plugin(AudioPlugin)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .insert_resource(CollidersLoaded(false))
@@ -91,6 +92,8 @@ fn main() {
                 game::process_triggers,
                 post_processing::change_blur,
                 hud::update_body_icon,
+				hud::update_subtitle,
+				// hud::test_subtitle,
             )
                 .in_set(OnUpdate(AppState::InGame)),
         )
