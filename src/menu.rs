@@ -65,9 +65,16 @@ impl GameTrigger {
     }
 }
 
+/// This entity does not need further processing
+#[derive(Component)]
+pub struct Processed;
+
 pub fn apply_gltf_extras(
     mut cmd: Commands,
-    gltf_extras: Query<(Entity, &GltfExtras, &Transform, &Children), Without<PlayerBody>>,
+    gltf_extras: Query<
+        (Entity, &GltfExtras, &Transform, &Children),
+        (Without<PlayerBody>, Without<Processed>),
+    >,
     mut player_spawn_info: Query<&mut PlayerSpawn, With<PlayerBody>>,
     bevy_meshes: Res<Assets<Mesh>>,
     bevy_mesh_components: Query<&Handle<Mesh>>,
@@ -90,7 +97,12 @@ pub fn apply_gltf_extras(
                     GlobalTransform::default(),
                 ));
             }
-            cmd.entity(ent).despawn_recursive();
+            if !meta.role.starts_with("Laser") {
+                info!("Not a laser, destroying");
+                cmd.entity(ent).despawn_recursive();
+            } else {
+                cmd.entity(ent).insert(Processed);
+            }
             return;
         }
 

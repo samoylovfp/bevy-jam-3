@@ -58,7 +58,6 @@ static FILES: &[&str] = &[
     "19-doc1.ogg",
 ];
 
-static FIRST_PHASE_END: usize = 2;
 
 fn start_music(asset_server: Res<AssetServer>, audio: Res<AudioChannel<BgMusic>>) {
     for f in FILES {
@@ -90,7 +89,6 @@ fn dialogue(
     let play_dialogue_file = |n: usize| String::from("sounds/dialogues/") + FILES[n];
     let play_first_phase_dialog =
         |n: usize| audio_channel.play(asset_server.load(play_dialogue_file(n)));
-    // info!("playing: {}", audio_channel.is_playing_sound());
     let phase_end = match *game_state {
         GameState::JustSpawned => 2,
         GameState::InTestingRoom | GameState::TurnOnLaser1 => 3,
@@ -121,6 +119,9 @@ fn dialogue(
             } else if n < phase_end {
                 info!("Continuing to {n}+1");
                 play_first_phase_dialog(n + 1);
+                if n == 3 && matches!(*game_state, GameState::InTestingRoom) {
+                    *game_state = GameState::TurnOnLaser1;
+                }
                 DialoguePlaying::StartedButNotPlaying(n + 1)
             } else {
                 events.send(SubtitleTrigger(String::new()));
@@ -134,11 +135,3 @@ fn dialogue(
 fn stop_all_dialogue(audio: Res<AudioChannel<SpawnRoomSpeaker>>) {
     audio.stop();
 }
-
-// fn adjust_positional_audio(
-//     start: Query<&PlayerSpawn>,
-//     body: Query<
-//     audio: Res<AudioChannel<SpawnRoomSpeaker>>,
-// ) {
-
-// }
