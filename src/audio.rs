@@ -76,9 +76,9 @@ enum DialoguePlaying {
     Playing(usize),
 }
 
-static SPEED: f64 = 5.0;
+static SPEED: f64 = 1.5;
 
-static SUBTITLES: &str = include_str!("../assets/text/subtitles.txt");
+pub static SUBTITLES: &str = include_str!("../assets/text/subtitles.txt");
 
 fn dialogue(
     asset_server: Res<AssetServer>,
@@ -91,7 +91,7 @@ fn dialogue(
     let play_dialogue_file = |n: usize| String::from("sounds/dialogues/") + AUDIO_FILES[n];
     let on_spawn = 2;
     let in_room = 4;
-    let after_first_laser = 10;
+    let after_first_laser = 11;
 
     let play_first_phase_dialog =
         |n: usize| audio_channel.play(asset_server.load(play_dialogue_file(n)));
@@ -99,6 +99,7 @@ fn dialogue(
         GameState::JustSpawned => on_spawn,
         GameState::InTestingRoom | GameState::TurnOnLaser1 => in_room,
         GameState::Laser1EffectDiscussion | GameState::TurnOnLaser2 => after_first_laser,
+        GameState::Escape => 15
     };
 
     let new_state = match *playing {

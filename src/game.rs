@@ -3,7 +3,8 @@ use bevy_kira_audio::{AudioChannel, AudioControl};
 use bevy_rapier3d::prelude::{CollisionEvent, ExternalImpulse, Velocity};
 
 use crate::{
-    audio::{SpawnRoomSpeaker, AUDIO_FILES},
+    audio::{SpawnRoomSpeaker, AUDIO_FILES, SUBTITLES},
+    hud::SubtitleTrigger,
     menu::{GameTrigger, ShowOn},
     post_processing::GameCamera,
     AppState, CameraMenu, PlayerBody, PlayerHead, PlayerLegs, PlayerSpawn,
@@ -25,7 +26,8 @@ pub enum GameState {
     InTestingRoom,
     TurnOnLaser1,
     Laser1EffectDiscussion,
-    TurnOnLaser2
+    TurnOnLaser2,
+    Escape,
 }
 
 pub fn spawn_player(
@@ -265,6 +267,7 @@ pub(crate) fn process_triggers(
     audio_channel: Res<AudioChannel<SpawnRoomSpeaker>>,
     asset_server: Res<AssetServer>,
     triggers: Query<(Entity, &GameTrigger)>,
+    mut subtitle_events: EventWriter<SubtitleTrigger>,
 ) {
     for event in events.iter() {
         match event {
@@ -283,18 +286,26 @@ pub(crate) fn process_triggers(
                 match *game_state {
                     GameState::TurnOnLaser1
                     | GameState::Laser1EffectDiscussion
-                    | GameState::TurnOnLaser2 => {
+                    | GameState::TurnOnLaser2
+                    | GameState::Escape => {
                         laser_event.send(LaserTrigger::Width);
                     }
                     _ => {}
                 }
             }
-            GameTrigger::LaserHeight | GameTrigger::LaserHeight_11 => match *game_state {
-                GameState::TurnOnLaser2 => {
-                    laser_event.send(LaserTrigger::Height);
+            GameTrigger::LaserHeight | GameTrigger::LaserHeight_11 => {
+                if matches!(event, GameTrigger::LaserHeight_11)
+                    && matches!(*game_state, GameState::TurnOnLaser2)
+                {
+                    *game_state = GameState::Escape;
                 }
-                _ => {}
-            },
+                match *game_state {
+                    GameState::TurnOnLaser2 | GameState::Escape => {
+                        laser_event.send(LaserTrigger::Height);
+                    }
+                    _ => {}
+                }
+            }
             GameTrigger::Sensor_17 => {
                 audio_channel
                     .play(asset_server.load(String::from("sounds/dialogues/") + AUDIO_FILES[16]));
@@ -303,6 +314,9 @@ pub(crate) fn process_triggers(
                         cmd.entity(ent).despawn_recursive()
                     }
                 }
+                subtitle_events.send(SubtitleTrigger(
+                    SUBTITLES.lines().nth(16).unwrap().to_string(),
+                ));
             }
             GameTrigger::Sensor_18 => {
                 audio_channel
@@ -312,6 +326,9 @@ pub(crate) fn process_triggers(
                         cmd.entity(ent).despawn_recursive()
                     }
                 }
+                subtitle_events.send(SubtitleTrigger(
+                    SUBTITLES.lines().nth(17).unwrap().to_string(),
+                ));
             }
             GameTrigger::Sensor_19 => {
                 audio_channel
@@ -321,6 +338,9 @@ pub(crate) fn process_triggers(
                         cmd.entity(ent).despawn_recursive()
                     }
                 }
+                subtitle_events.send(SubtitleTrigger(
+                    SUBTITLES.lines().nth(18).unwrap().to_string(),
+                ));
             }
             _ => {}
         }
