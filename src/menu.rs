@@ -104,9 +104,12 @@ pub fn apply_gltf_extras(
                 info!("Not a laser, destroying");
                 cmd.entity(ent).despawn_recursive();
             } else {
-                if meta.role.contains("_") {
+                if meta.role.contains("_04") {
                     cmd.entity(ent)
                         .insert((Visibility::Hidden, ShowOn(GameState::TurnOnLaser1)));
+                } else if meta.role.contains("_11") {
+                    cmd.entity(ent)
+                        .insert((Visibility::Hidden, ShowOn(GameState::TurnOnLaser2)));
                 }
                 cmd.entity(ent).insert(Processed);
             }
