@@ -257,6 +257,7 @@ pub(crate) fn process_triggers(
     mut events: EventReader<GameTrigger>,
     mut next_state: ResMut<NextState<AppState>>,
     mut game_state: ResMut<GameState>,
+    mut laser_event: EventWriter<LaserTrigger>
 ) {
     for event in events.iter() {
         match event {
@@ -267,9 +268,12 @@ pub(crate) fn process_triggers(
                 }
             }
             GameTrigger::LaserWidth | GameTrigger::LaserWidth_04 => {
+                if matches!(event, GameTrigger::LaserWidth_04) && matches!(*game_state, GameState::TurnOnLaser1) {
+                    *game_state = GameState::TurnOnLaser2;
+                }
                 match *game_state {
                     GameState::TurnOnLaser1 | GameState::TurnOnLaser2 => {
-                        // SEND WIDTH SRINKAGE
+                        laser_event.send(LaserTrigger::Width);
                     },
                     _ => {}
                 }
@@ -277,7 +281,7 @@ pub(crate) fn process_triggers(
             GameTrigger::LaserHeight | GameTrigger::LaserHeight_11 => {
                 match *game_state {
                     GameState::TurnOnLaser2 => {
-                        // SEND HEIGHT SRINKAGE
+                        laser_event.send(LaserTrigger::Height);
                     },
                     _ => {}
                 }
