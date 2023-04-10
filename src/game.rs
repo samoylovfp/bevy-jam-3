@@ -24,7 +24,8 @@ pub enum GameState {
     JustSpawned,
     InTestingRoom,
     TurnOnLaser1,
-    TurnOnLaser2,
+    Laser1EffectDiscussion,
+    TurnOnLaser2
 }
 
 pub fn spawn_player(
@@ -277,10 +278,12 @@ pub(crate) fn process_triggers(
                 if matches!(event, GameTrigger::LaserWidth_04)
                     && matches!(*game_state, GameState::TurnOnLaser1)
                 {
-                    *game_state = GameState::TurnOnLaser2;
+                    *game_state = GameState::Laser1EffectDiscussion
                 }
                 match *game_state {
-                    GameState::TurnOnLaser1 | GameState::TurnOnLaser2 => {
+                    GameState::TurnOnLaser1
+                    | GameState::Laser1EffectDiscussion
+                    | GameState::TurnOnLaser2 => {
                         laser_event.send(LaserTrigger::Width);
                     }
                     _ => {}

@@ -60,7 +60,7 @@ pub static AUDIO_FILES: &[&str] = &[
 
 fn start_music(asset_server: Res<AssetServer>, audio: Res<AudioChannel<BgMusic>>) {
     for f in AUDIO_FILES {
-        let _h: Handle<AudioSource> = asset_server.load(*f);
+        let _h: Handle<AudioSource> = asset_server.load(String::from("sounds/dialogues/") + *f);
     }
 
     audio
@@ -89,15 +89,16 @@ fn dialogue(
 ) {
     audio_channel.set_playback_rate(SPEED);
     let play_dialogue_file = |n: usize| String::from("sounds/dialogues/") + AUDIO_FILES[n];
+    let on_spawn = 2;
+    let in_room = 4;
+    let after_first_laser = 10;
+
     let play_first_phase_dialog =
         |n: usize| audio_channel.play(asset_server.load(play_dialogue_file(n)));
     let phase_end = match *game_state {
-        GameState::JustSpawned => 2,
-        GameState::InTestingRoom | GameState::TurnOnLaser1 => 3,
-        _ => {
-            warn!("TODO");
-            1
-        }
+        GameState::JustSpawned => on_spawn,
+        GameState::InTestingRoom | GameState::TurnOnLaser1 => in_room,
+        GameState::Laser1EffectDiscussion | GameState::TurnOnLaser2 => after_first_laser,
     };
 
     let new_state = match *playing {
@@ -117,9 +118,11 @@ fn dialogue(
         }
         DialoguePlaying::Playing(n) => {
             if !audio_channel.is_playing_sound() {
-                if n == 3 && matches!(*game_state, GameState::InTestingRoom) {
-                    info!("TUrning on the laser!!");
+                if n == in_room && matches!(*game_state, GameState::InTestingRoom) {
                     *game_state = GameState::TurnOnLaser1;
+                }
+                if n == after_first_laser && *game_state == GameState::Laser1EffectDiscussion {
+                    *game_state = GameState::TurnOnLaser2;
                 }
             }
             if audio_channel.is_playing_sound() {
