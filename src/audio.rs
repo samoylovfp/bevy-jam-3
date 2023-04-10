@@ -76,6 +76,8 @@ enum DialoguePlaying {
     Playing(usize),
 }
 
+static SPEED: f64 = 5.0;
+
 static SUBTITLES: &str = include_str!("../assets/text/subtitles.txt");
 
 fn dialogue(
@@ -85,6 +87,7 @@ fn dialogue(
     mut events: EventWriter<SubtitleTrigger>,
     mut game_state: ResMut<GameState>,
 ) {
+    audio_channel.set_playback_rate(SPEED);
     let play_dialogue_file = |n: usize| String::from("sounds/dialogues/") + FILES[n];
     let play_first_phase_dialog =
         |n: usize| audio_channel.play(asset_server.load(play_dialogue_file(n)));
