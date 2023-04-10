@@ -1,4 +1,4 @@
-# Bevy Game Jam 3
+# Bevy Jam 3
 
 You wake up in an unknown facility B.L.A.S.I.C, not remembering how you got here. You are forced to go through a series of tests of new laser treatment that is designed to enhance the vision abilities of humans. However, there are side effects… 
 
