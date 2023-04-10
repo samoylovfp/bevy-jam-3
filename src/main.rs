@@ -140,7 +140,7 @@ fn setup_player(In(RenderTargetImage(render_target)): In<RenderTargetImage>, mut
     // so legs keep in contact with surface while skipping
     let leg_down_margin = 0.1;
 
-	let mut size_timer = Timer::from_seconds(2.0, TimerMode::Once);
+	let mut size_timer = Timer::from_seconds(6.0, TimerMode::Once);
 	size_timer.pause();
 
     cmd.spawn((

@@ -125,7 +125,7 @@ pub(crate) fn change_blur(
     effects: Query<&PlayerEffects>,
 ) {
     let eff = effects.single();
-    let blur_strength = (eff.height + eff.width - 1.0) / 200.0;
+    let blur_strength = (eff.height + eff.width - 1.0) / 300.0;
     post_processing_materials
         .iter_mut()
         .next()
