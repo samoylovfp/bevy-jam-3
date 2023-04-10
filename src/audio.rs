@@ -14,7 +14,7 @@ pub(crate) struct AudioPlugin;
 struct BgMusic;
 
 #[derive(Resource)]
-struct SpawnRoomSpeaker;
+pub struct SpawnRoomSpeaker;
 
 #[derive(Resource)]
 struct ProtagonistVoice;
@@ -36,7 +36,7 @@ impl Plugin for AudioPlugin {
 }
 
 // enter the test chamber
-static FILES: &[&str] = &[
+pub static AUDIO_FILES: &[&str] = &[
     "01-doc1.ogg",
     "02-bvj.ogg",
     "03-doc1.ogg",
@@ -59,7 +59,7 @@ static FILES: &[&str] = &[
 ];
 
 fn start_music(asset_server: Res<AssetServer>, audio: Res<AudioChannel<BgMusic>>) {
-    for f in FILES {
+    for f in AUDIO_FILES {
         let _h: Handle<AudioSource> = asset_server.load(*f);
     }
 
@@ -88,7 +88,7 @@ fn dialogue(
     mut game_state: ResMut<GameState>,
 ) {
     audio_channel.set_playback_rate(SPEED);
-    let play_dialogue_file = |n: usize| String::from("sounds/dialogues/") + FILES[n];
+    let play_dialogue_file = |n: usize| String::from("sounds/dialogues/") + AUDIO_FILES[n];
     let play_first_phase_dialog =
         |n: usize| audio_channel.play(asset_server.load(play_dialogue_file(n)));
     let phase_end = match *game_state {

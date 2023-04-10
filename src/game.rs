@@ -1,7 +1,9 @@
 use bevy::{input::mouse::MouseMotion, prelude::*};
+use bevy_kira_audio::{AudioChannel, AudioControl};
 use bevy_rapier3d::prelude::{CollisionEvent, ExternalImpulse, Velocity};
 
 use crate::{
+    audio::{SpawnRoomSpeaker, AUDIO_FILES},
     menu::{GameTrigger, ShowOn},
     post_processing::GameCamera,
     AppState, CameraMenu, PlayerBody, PlayerHead, PlayerLegs, PlayerSpawn,
@@ -115,15 +117,15 @@ pub enum GrowthState {
 
 #[derive(Component, PartialEq)]
 pub enum LaserTrigger {
-	Height,
-	Width,
+    Height,
+    Width,
 }
 
 pub fn change_size(
     keyboard: Res<Input<KeyCode>>,
     mut body: Query<(&mut Transform, &mut PlayerEffects), With<PlayerBody>>,
-	time: Res<Time>,
-	mut events: EventReader<LaserTrigger>,
+    time: Res<Time>,
+    mut events: EventReader<LaserTrigger>,
 ) {
     let (mut body, mut effects) = body.single_mut();
 
@@ -149,15 +151,15 @@ pub fn change_size(
         _ => (),
     }
 
-	effects.height_timer.tick(time.delta());
-	effects.width_timer.tick(time.delta());
+    effects.height_timer.tick(time.delta());
+    effects.width_timer.tick(time.delta());
 
-	if effects.height_timer.just_finished() {
-		effects.height_state = GrowthState::Increasing;
-	}
-	if effects.width_timer.just_finished() {
-		effects.width_state = GrowthState::Increasing;
-	}
+    if effects.height_timer.just_finished() {
+        effects.height_state = GrowthState::Increasing;
+    }
+    if effects.width_timer.just_finished() {
+        effects.width_state = GrowthState::Increasing;
+    }
 
     match effects.width_state {
         GrowthState::Increasing => {
@@ -180,26 +182,26 @@ pub fn change_size(
         }
         _ => (),
     }
-	for event in events.iter() {
-		if *event == LaserTrigger::Height {
-			effects.height_state = GrowthState::Decreasing;
-			effects.height_timer.reset();
-			effects.height_timer.unpause();
-		} else if *event == LaserTrigger::Width {
-			effects.width_state = GrowthState::Decreasing;
-			effects.width_timer.reset();
-			effects.width_timer.unpause();
-		}
-	}
+    for event in events.iter() {
+        if *event == LaserTrigger::Height {
+            effects.height_state = GrowthState::Decreasing;
+            effects.height_timer.reset();
+            effects.height_timer.unpause();
+        } else if *event == LaserTrigger::Width {
+            effects.width_state = GrowthState::Decreasing;
+            effects.width_timer.reset();
+            effects.width_timer.unpause();
+        }
+    }
     if keyboard.pressed(KeyCode::B) && effects.height_state == GrowthState::Big {
-		effects.height_state = GrowthState::Decreasing;
-		effects.height_timer.reset();
-		effects.height_timer.unpause();
+        effects.height_state = GrowthState::Decreasing;
+        effects.height_timer.reset();
+        effects.height_timer.unpause();
     }
     if keyboard.pressed(KeyCode::N) && effects.width_state == GrowthState::Big {
-		effects.width_state = GrowthState::Decreasing;
-		effects.width_timer.reset();
-		effects.width_timer.unpause();
+        effects.width_state = GrowthState::Decreasing;
+        effects.width_timer.reset();
+        effects.width_timer.unpause();
     }
 }
 
@@ -254,10 +256,14 @@ pub(crate) fn check_triggers(
 }
 
 pub(crate) fn process_triggers(
+    mut cmd: Commands,
     mut events: EventReader<GameTrigger>,
     mut next_state: ResMut<NextState<AppState>>,
     mut game_state: ResMut<GameState>,
-    mut laser_event: EventWriter<LaserTrigger>
+    mut laser_event: EventWriter<LaserTrigger>,
+    audio_channel: Res<AudioChannel<SpawnRoomSpeaker>>,
+    asset_server: Res<AssetServer>,
+    triggers: Query<(Entity, &GameTrigger)>,
 ) {
     for event in events.iter() {
         match event {
@@ -268,24 +274,51 @@ pub(crate) fn process_triggers(
                 }
             }
             GameTrigger::LaserWidth | GameTrigger::LaserWidth_04 => {
-                if matches!(event, GameTrigger::LaserWidth_04) && matches!(*game_state, GameState::TurnOnLaser1) {
+                if matches!(event, GameTrigger::LaserWidth_04)
+                    && matches!(*game_state, GameState::TurnOnLaser1)
+                {
                     *game_state = GameState::TurnOnLaser2;
                 }
                 match *game_state {
                     GameState::TurnOnLaser1 | GameState::TurnOnLaser2 => {
                         laser_event.send(LaserTrigger::Width);
-                    },
+                    }
                     _ => {}
                 }
-            },
-            GameTrigger::LaserHeight | GameTrigger::LaserHeight_11 => {
-                match *game_state {
-                    GameState::TurnOnLaser2 => {
-                        laser_event.send(LaserTrigger::Height);
-                    },
-                    _ => {}
+            }
+            GameTrigger::LaserHeight | GameTrigger::LaserHeight_11 => match *game_state {
+                GameState::TurnOnLaser2 => {
+                    laser_event.send(LaserTrigger::Height);
                 }
+                _ => {}
             },
+            GameTrigger::Sensor_17 => {
+                audio_channel
+                    .play(asset_server.load(String::from("sounds/dialogues/") + AUDIO_FILES[16]));
+                for (ent, trigger) in triggers.iter() {
+                    if trigger == event {
+                        cmd.entity(ent).despawn_recursive()
+                    }
+                }
+            }
+            GameTrigger::Sensor_18 => {
+                audio_channel
+                    .play(asset_server.load(String::from("sounds/dialogues/") + AUDIO_FILES[17]));
+                for (ent, trigger) in triggers.iter() {
+                    if trigger == event {
+                        cmd.entity(ent).despawn_recursive()
+                    }
+                }
+            }
+            GameTrigger::Sensor_19 => {
+                audio_channel
+                    .play(asset_server.load(String::from("sounds/dialogues/") + AUDIO_FILES[18]));
+                for (ent, trigger) in triggers.iter() {
+                    if trigger == event {
+                        cmd.entity(ent).despawn_recursive()
+                    }
+                }
+            }
             _ => {}
         }
     }

@@ -39,7 +39,7 @@ pub fn spawn_menu_screen(mut commands: Commands, asset_server: Res<AssetServer>)
 /// - component for the sensor
 /// - event
 #[allow(non_camel_case_types)]
-#[derive(Component, Clone, strum::EnumString)]
+#[derive(Component, Clone, strum::EnumString, PartialEq, Eq)]
 pub enum GameTrigger {
     ExitLevel,
     Sensor_04,
