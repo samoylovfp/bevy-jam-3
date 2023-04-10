@@ -1,0 +1,19 @@
+Doctor 1: Good morning, test subject... Aha! Test subject BVJ-3.
+BVJ-3: Where am I? Why is my vision so blurry?
+Doctor 1: Please keep calm. Today we are doing several vision improvement tests. Please proceed to the test chamber.
+Doctor 1: Good. Now please come closer to the laser to start the first procedure.
+BVJ-3: Ok. I certainly hope you know what you are doing
+Doctor 2: What’s that? I’ve told you, it’s too early to test it!
+Doctor 1: That’s just some side effects. How do you feel, BVJ-3?
+BVJ-3: Aa, my vision has definitely gotten sharper, but I feel kinda small now.  It’s weird…
+Doctor 1: Yeah, it looks like we messed up with your height settings in molecular frequency calculation. Maybe I forgot the Heidelberg’s coefficient somewhere.
+Doctor 2: Forgot? Damn, we don’t have time to run all the calculations again
+Doctor 1: Test subject BVJ-3, in a moment the effect should go away. Please proceed to the next laser test.
+BVJ-3: Do I have a choice?…
+Doctor 1: Uh-oh…
+Doctor 2: Shit! It’s getting out of control! It can run away in this state. It’s too dangerous… Stop the test immediately!
+Doctor 1: BVJ-3, please return to your room for sedation.
+BVJ-3: Haha I’m not coming back. No, no, no! It’s my only chance!
+Doctor 2: Test subject BVJ-3, do NOT diverge from the route and follow to your room
+Doctor 2: You will not achieve anything! Return immediately!
+Doctor 1: Let’s not complicate this any further. Would you kindly return?
