@@ -1,4 +1,4 @@
-# Bevy Jam 3
+# BLASIC [submission for Bevy Jam #3]
 
 You wake up in an unknown facility B.L.A.S.I.C, not remembering how you got here. You are forced to go through a series of tests of new laser treatment that is designed to enhance the vision abilities of humans. However, there are side effects… 
 
@@ -24,11 +24,10 @@ Use `WASD` to walk, mouse to look around, `Space` for jumping
 
 [Julia Bubnova](https://github.com/denolia): music, voice
 
+<img src="demo/screen02.jpg" width="480px" height="300px">
 
 ## Links
-colliders from gltf mesh: https://discord.com/channels/691052431525675048/937158127491633152/1092888876940546059
-
-<img src="demo/screen02.jpg" width="480px" height="300px">
+Colliders from gltf mesh: https://discord.com/channels/691052431525675048/937158127491633152/1092888876940546059
 
 ## Exporting gltf from blender:
 
