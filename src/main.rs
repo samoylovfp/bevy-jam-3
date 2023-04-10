@@ -36,10 +36,10 @@ use serde::Deserialize;
 #[derive(Component)]
 pub struct PlayerBody;
 
+/// Pitch
 #[derive(Component)]
 pub struct PlayerHead;
 
-/// Pitch
 #[derive(Component)]
 pub struct PlayerSpawn((Vec3, Vec3));
 
