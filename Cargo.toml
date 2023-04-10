@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 bevy = "0.10.1"
+bevy_kira_audio = "0.15.0"
 bevy_rapier3d = { version = "0.21.0", default-features = false, features = [
     "simd-stable",
     "dim3",
@@ -17,6 +18,7 @@ include-flate = { version = "0.2.0", features = ["stable"] }
 serde = { version = "1.0.159", features = ["derive"] }
 serde_json = "1.0.95"
 smooth-bevy-cameras = "0.8.0"
+strum = { version = "0.24.1", features = ["derive"] }
 
 [profile.dev.package."*"]
 opt-level = 3

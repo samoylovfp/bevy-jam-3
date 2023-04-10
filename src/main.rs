@@ -4,11 +4,13 @@
 
 //! A simple 3D scene with light shining over a cube sitting on a plane.
 
+mod audio;
 mod finish;
 mod game;
 mod menu;
 mod post_processing;
 
+use audio::AudioPlugin;
 use bevy::prelude::*;
 use bevy::render::camera::RenderTarget;
 use bevy::sprite::Material2dPlugin;
@@ -20,8 +22,10 @@ use bevy_rapier3d::prelude::Sensor;
 use bevy_rapier3d::prelude::{
     Collider, ExternalImpulse, LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody, Velocity,
 };
+use game::check_triggers;
 use game::GrowthState;
 use game::PlayerEffects;
+use menu::GameTrigger;
 use post_processing::setup_postpro;
 use post_processing::BVJPostProcessing;
 use post_processing::GameCamera;
@@ -64,6 +68,7 @@ fn main() {
         .add_system(grab_mouse)
         .add_system(check_triggers)
         .add_event::<GameTrigger>()
+        .add_plugin(AudioPlugin)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .insert_resource(CollidersLoaded(false))
         .add_startup_system(spawn_gltf)
