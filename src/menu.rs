@@ -8,8 +8,8 @@ use bevy::{
 use bevy_rapier3d::prelude::{ActiveEvents, Collider, ComputedColliderShape, RigidBody, Sensor};
 
 use crate::{
-    post_processing::GameCamera, AppState, CameraMenu, CollidersLoaded, NodeMeta, PlayerBody,
-    PlayerSpawn,
+    game::GameState, post_processing::GameCamera, AppState, CameraMenu, CollidersLoaded, NodeMeta,
+    PlayerBody, PlayerSpawn,
 };
 
 pub(crate) fn activate_menu_camera(
@@ -65,6 +65,9 @@ impl GameTrigger {
     }
 }
 
+#[derive(Component)]
+pub struct ShowOn(pub GameState);
+
 /// This entity does not need further processing
 #[derive(Component)]
 pub struct Processed;
@@ -101,6 +104,10 @@ pub fn apply_gltf_extras(
                 info!("Not a laser, destroying");
                 cmd.entity(ent).despawn_recursive();
             } else {
+                if meta.role.contains("_") {
+                    cmd.entity(ent)
+                        .insert((Visibility::Hidden, ShowOn(GameState::TurnOnLaser1)));
+                }
                 cmd.entity(ent).insert(Processed);
             }
             return;

@@ -58,7 +58,6 @@ static FILES: &[&str] = &[
     "19-doc1.ogg",
 ];
 
-
 fn start_music(asset_server: Res<AssetServer>, audio: Res<AudioChannel<BgMusic>>) {
     for f in FILES {
         let _h: Handle<AudioSource> = asset_server.load(*f);
@@ -114,14 +113,17 @@ fn dialogue(
             }
         }
         DialoguePlaying::Playing(n) => {
+            if !audio_channel.is_playing_sound() {
+                if n == 3 && matches!(*game_state, GameState::InTestingRoom) {
+                    info!("TUrning on the laser!!");
+                    *game_state = GameState::TurnOnLaser1;
+                }
+            }
             if audio_channel.is_playing_sound() {
                 DialoguePlaying::Playing(n)
             } else if n < phase_end {
                 info!("Continuing to {n}+1");
                 play_first_phase_dialog(n + 1);
-                if n == 3 && matches!(*game_state, GameState::InTestingRoom) {
-                    *game_state = GameState::TurnOnLaser1;
-                }
                 DialoguePlaying::StartedButNotPlaying(n + 1)
             } else {
                 events.send(SubtitleTrigger(String::new()));

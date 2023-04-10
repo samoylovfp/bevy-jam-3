@@ -2,8 +2,9 @@ use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_rapier3d::prelude::{CollisionEvent, ExternalImpulse, Velocity};
 
 use crate::{
-    menu::GameTrigger, post_processing::GameCamera, AppState, CameraMenu, PlayerBody, PlayerHead,
-    PlayerLegs, PlayerSpawn,
+    menu::{GameTrigger, ShowOn},
+    post_processing::GameCamera,
+    AppState, CameraMenu, PlayerBody, PlayerHead, PlayerLegs, PlayerSpawn,
 };
 
 pub(crate) fn activate_game_camera(
@@ -16,7 +17,7 @@ pub(crate) fn activate_game_camera(
         .for_each(|mut c| c.is_active = true);
 }
 
-#[derive(Resource)]
+#[derive(Resource, PartialEq, Eq)]
 pub enum GameState {
     JustSpawned,
     InTestingRoom,
@@ -266,6 +267,14 @@ pub(crate) fn process_triggers(
                 }
             }
             _ => warn!("todo"),
+        }
+    }
+}
+
+pub fn show_lasers(mut lasers: Query<(&mut Visibility, &ShowOn)>, game_state: Res<GameState>) {
+    for (mut vis, show_on) in lasers.iter_mut() {
+        if *game_state == show_on.0 {
+            *vis = Visibility::Visible;
         }
     }
 }

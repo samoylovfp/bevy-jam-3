@@ -28,6 +28,7 @@ use game::check_triggers;
 use game::GameState;
 use game::GrowthState;
 use game::PlayerEffects;
+use game::show_lasers;
 use menu::GameTrigger;
 use post_processing::setup_postpro;
 use post_processing::BVJPostProcessing;
@@ -70,6 +71,7 @@ fn main() {
         .add_state::<AppState>()
         .add_system(grab_mouse)
         .add_system(check_triggers)
+        .add_system(show_lasers)
         .add_event::<GameTrigger>()
 		.add_event::<LaserTrigger>()
         .add_event::<hud::SubtitleTrigger>()
