@@ -1,8 +1,12 @@
-use bevy::prelude::{info, AssetServer, Handle, IntoSystemAppConfig, IntoSystemConfig, OnExit, OnUpdate, Plugin, Res, ResMut, Resource, EventWriter};
+use bevy::prelude::{
+    info, AssetServer, EventWriter, Handle, IntoSystemAppConfig, IntoSystemConfig, OnExit,
+    OnUpdate, Plugin, Res, ResMut, Resource,
+};
 use bevy_kira_audio::{AudioApp, AudioChannel, AudioControl, AudioSource};
 
-use crate::AppState;
+use crate::game::GameState;
 use crate::hud::SubtitleTrigger;
+use crate::AppState;
 
 pub(crate) struct AudioPlugin;
 
@@ -23,7 +27,7 @@ impl Plugin for AudioPlugin {
         app.add_plugin(bevy_kira_audio::AudioPlugin)
             .add_audio_channel::<BgMusic>()
             .add_audio_channel::<SpawnRoomSpeaker>()
-            .add_system(first_dialogue.in_set(OnUpdate(AppState::InGame)))
+            .add_system(dialogue.in_set(OnUpdate(AppState::InGame)))
             .add_system(stop_all_dialogue.in_schedule(OnExit(AppState::InGame)))
             .add_startup_system(start_music)
             .insert_resource(DialoguePlaying::None);
@@ -31,11 +35,11 @@ impl Plugin for AudioPlugin {
     }
 }
 
-// spawn
-static FIRST_PHASE: &[&str] = &["01-doc1.ogg", "02-bvj.ogg", "03-doc1.ogg"];
-
 // enter the test chamber
-static SECOND_PHASE: &[&str] = &[
+static FILES: &[&str] = &[
+    "01-doc1.ogg",
+    "02-bvj.ogg",
+    "03-doc1.ogg",
     "04-doc1.ogg",
     "05-bvj.ogg",
     "06-doc2.ogg",
@@ -44,9 +48,6 @@ static SECOND_PHASE: &[&str] = &[
     "09-doc1.ogg",
     "10-doc2.ogg",
     "11-doc1.ogg",
-];
-
-static REMAINING_FILES: &[&str] = &[
     "12-bvj.ogg",
     "13-doc1.ogg",
     "14-doc2.ogg",
@@ -57,8 +58,10 @@ static REMAINING_FILES: &[&str] = &[
     "19-doc1.ogg",
 ];
 
+static FIRST_PHASE_END: usize = 2;
+
 fn start_music(asset_server: Res<AssetServer>, audio: Res<AudioChannel<BgMusic>>) {
-    for f in FIRST_PHASE.iter().chain(SECOND_PHASE) {
+    for f in FILES {
         let _h: Handle<AudioSource> = asset_server.load(*f);
     }
 
@@ -77,16 +80,22 @@ enum DialoguePlaying {
 
 static SUBTITLES: &str = include_str!("../assets/text/subtitles.txt");
 
-fn first_dialogue(
+fn dialogue(
     asset_server: Res<AssetServer>,
     mut playing: ResMut<DialoguePlaying>,
     audio_channel: Res<AudioChannel<SpawnRoomSpeaker>>,
-    mut events: EventWriter<SubtitleTrigger>
+    mut events: EventWriter<SubtitleTrigger>,
+    mut game_state: ResMut<GameState>,
 ) {
-    let first_phase_dialogue_file = |n: usize| String::from("sounds/dialogues/") + FIRST_PHASE[n];
+    let play_dialogue_file = |n: usize| String::from("sounds/dialogues/") + FILES[n];
     let play_first_phase_dialog =
-        |n: usize| audio_channel.play(asset_server.load(first_phase_dialogue_file(n)));
+        |n: usize| audio_channel.play(asset_server.load(play_dialogue_file(n)));
     // info!("playing: {}", audio_channel.is_playing_sound());
+    let phase_end = match *game_state {
+        GameState::JustSpawned => 2,
+        GameState::InTestingRoom | GameState::TurnOnLaser1 => 3,
+        _ => todo!(),
+    };
 
     let new_state = match *playing {
         DialoguePlaying::None => {
@@ -106,11 +115,12 @@ fn first_dialogue(
         DialoguePlaying::Playing(n) => {
             if audio_channel.is_playing_sound() {
                 DialoguePlaying::Playing(n)
-            } else if n < FIRST_PHASE.len() - 1 {
+            } else if n < phase_end {
                 info!("Continuing to {n}+1");
                 play_first_phase_dialog(n + 1);
                 DialoguePlaying::StartedButNotPlaying(n + 1)
             } else {
+                events.send(SubtitleTrigger(String::new()));
                 DialoguePlaying::Playing(n)
             }
         }

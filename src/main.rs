@@ -24,6 +24,7 @@ use bevy_rapier3d::prelude::{
     Collider, ExternalImpulse, LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody, Velocity,
 };
 use game::check_triggers;
+use game::GameState;
 use game::GrowthState;
 use game::PlayerEffects;
 use menu::GameTrigger;
@@ -69,9 +70,10 @@ fn main() {
         .add_system(grab_mouse)
         .add_system(check_triggers)
         .add_event::<GameTrigger>()
-		.add_event::<hud::SubtitleTrigger>()
+        .add_event::<hud::SubtitleTrigger>()
         .add_plugin(AudioPlugin)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
+        .insert_resource(GameState::JustSpawned)
         .insert_resource(CollidersLoaded(false))
         .add_startup_system(spawn_gltf)
         .add_startup_system(spawn_menu_camera)
@@ -92,8 +94,8 @@ fn main() {
                 game::process_triggers,
                 post_processing::change_blur,
                 hud::update_body_icon,
-				hud::update_subtitle,
-				// hud::test_subtitle,
+                hud::update_subtitle,
+                // hud::test_subtitle,
             )
                 .in_set(OnUpdate(AppState::InGame)),
         )

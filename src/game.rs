@@ -16,6 +16,14 @@ pub(crate) fn activate_game_camera(
         .for_each(|mut c| c.is_active = true);
 }
 
+#[derive(Resource)]
+pub enum GameState {
+    JustSpawned,
+    InTestingRoom,
+    TurnOnLaser1,
+    TurnOnLaser2
+}
+
 pub fn spawn_player(
     mut player: Query<(&mut Transform, &PlayerSpawn, &mut PlayerEffects), With<PlayerBody>>,
 ) {
@@ -221,11 +229,17 @@ pub(crate) fn check_triggers(
 pub(crate) fn process_triggers(
     mut events: EventReader<GameTrigger>,
     mut next_state: ResMut<NextState<AppState>>,
+    mut game_state: ResMut<GameState>
 ) {
     for event in events.iter() {
         match event {
             GameTrigger::ExitLevel => next_state.set(AppState::Finish),
-            _ => {}
+            GameTrigger::Sensor_04 => {
+                if matches!(*game_state, GameState::JustSpawned) {
+                    *game_state = GameState::InTestingRoom;
+                }
+            }
+            _ => todo!()
         }
     }
 }
