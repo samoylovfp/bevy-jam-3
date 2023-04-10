@@ -7,6 +7,7 @@
 mod audio;
 mod finish;
 mod game;
+mod hud;
 mod menu;
 mod post_processing;
 
@@ -79,6 +80,7 @@ fn main() {
         .add_systems((menu::create_colliders, menu::start_game).in_set(OnUpdate(AppState::Menu)))
         .add_system(game::activate_game_camera.in_schedule(OnEnter(AppState::InGame)))
         .add_system(game::spawn_player.in_schedule(OnEnter(AppState::InGame)))
+        .add_system(hud::spawn_hud.in_schedule(OnEnter(AppState::InGame)))
         .add_systems(
             (
                 game::touch_ground,
@@ -88,9 +90,11 @@ fn main() {
                 game::back_to_menu,
                 game::process_triggers,
                 post_processing::change_blur,
+                hud::update_body_icon,
             )
                 .in_set(OnUpdate(AppState::InGame)),
         )
+        .add_system(hud::despawn_hud.in_schedule(OnExit(AppState::InGame)))
         .add_system(menu::activate_menu_camera.in_schedule(OnEnter(AppState::Finish)))
         .add_system(finish::spawn_finish_screen.in_schedule(OnEnter(AppState::Finish)))
         .add_system(finish::restart.in_set(OnUpdate(AppState::Finish)))
@@ -166,9 +170,11 @@ fn setup_player(In(RenderTargetImage(render_target)): In<RenderTargetImage>, mut
                     target: RenderTarget::Image(render_target),
                     ..default()
                 },
+
                 transform: Transform::from_xyz(0.0, capsule_total_half_height * eyes_height, 0.0),
                 ..default()
             },
+            UiCameraConfig { show_ui: false },
         ));
         // legs
         parent.spawn((
