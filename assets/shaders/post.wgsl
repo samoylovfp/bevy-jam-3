@@ -27,8 +27,7 @@ fn fragment(
             let px_strength = abs(max(f32(x*2), 1.0) * max(f32(y*2), 1.0));
             output_color += textureSample(texture, our_sampler, uv + vec2<f32>(f32(x)*blur_strength.x, f32(y)*blur_strength.x))
                 /px_strength
-                /4.0
-                /f32(resolution*resolution);
+                /12.0;
         }
     }
 
