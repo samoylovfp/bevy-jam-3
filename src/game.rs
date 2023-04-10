@@ -266,7 +266,23 @@ pub(crate) fn process_triggers(
                     *game_state = GameState::InTestingRoom;
                 }
             }
-            _ => warn!("todo"),
+            GameTrigger::LaserWidth | GameTrigger::LaserWidth_04 => {
+                match *game_state {
+                    GameState::TurnOnLaser1 | GameState::TurnOnLaser2 => {
+                        // SEND WIDTH SRINKAGE
+                    },
+                    _ => {}
+                }
+            },
+            GameTrigger::LaserHeight | GameTrigger::LaserHeight_11 => {
+                match *game_state {
+                    GameState::TurnOnLaser2 => {
+                        // SEND HEIGHT SRINKAGE
+                    },
+                    _ => {}
+                }
+            },
+            _ => {}
         }
     }
 }
