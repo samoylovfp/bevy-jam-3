@@ -48,6 +48,9 @@ pub enum GameTrigger {
     LaserWidth_04,
     LaserHeight,
     LaserHeight_11,
+    Sensor_17,
+    Sensor_18,
+    Sensor_19,
 }
 
 impl GameTrigger {

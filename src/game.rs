@@ -21,7 +21,7 @@ pub enum GameState {
     JustSpawned,
     InTestingRoom,
     TurnOnLaser1,
-    TurnOnLaser2
+    TurnOnLaser2,
 }
 
 pub fn spawn_player(
@@ -229,7 +229,7 @@ pub(crate) fn check_triggers(
 pub(crate) fn process_triggers(
     mut events: EventReader<GameTrigger>,
     mut next_state: ResMut<NextState<AppState>>,
-    mut game_state: ResMut<GameState>
+    mut game_state: ResMut<GameState>,
 ) {
     for event in events.iter() {
         match event {
@@ -239,7 +239,7 @@ pub(crate) fn process_triggers(
                     *game_state = GameState::InTestingRoom;
                 }
             }
-            _ => todo!()
+            _ => warn!("todo"),
         }
     }
 }

@@ -1,5 +1,5 @@
 use bevy::prelude::{
-    info, AssetServer, EventWriter, Handle, IntoSystemAppConfig, IntoSystemConfig, OnExit,
+    info, warn, AssetServer, EventWriter, Handle, IntoSystemAppConfig, IntoSystemConfig, OnExit,
     OnUpdate, Plugin, Res, ResMut, Resource,
 };
 use bevy_kira_audio::{AudioApp, AudioChannel, AudioControl, AudioSource};
@@ -94,7 +94,10 @@ fn dialogue(
     let phase_end = match *game_state {
         GameState::JustSpawned => 2,
         GameState::InTestingRoom | GameState::TurnOnLaser1 => 3,
-        _ => todo!(),
+        _ => {
+            warn!("TODO");
+            1
+        }
     };
 
     let new_state = match *playing {
