@@ -134,12 +134,19 @@ pub fn apply_gltf_extras(
     }
 }
 
+#[derive(Component)]
+pub struct NoCollider;
+
 pub fn create_colliders(
     mut cmd: Commands,
     mut loaded: ResMut<CollidersLoaded>,
     gltf_meshes: Res<Assets<GltfMesh>>,
     bevy_meshes: Res<Assets<Mesh>>,
-    entities_with_meshes: Query<(Entity, &Handle<Mesh>), Without<Collider>>,
+    entities_with_meshes: Query<
+        (Entity, &Handle<Mesh>, &Parent),
+        (Without<Collider>, Without<NoCollider>),
+    >,
+    extras: Query<&GltfExtras>,
 ) {
     // FIXME: change into a system set run condition
     if loaded.0 {
@@ -159,7 +166,14 @@ pub fn create_colliders(
     }
     let mut colliders = 0;
 
-    for (ent, mesh_id) in entities_with_meshes.iter() {
+    for (ent, mesh_id, parent) in entities_with_meshes.iter() {
+        if let Ok(extras) = extras.get(parent.get()) {
+            let meta: NodeMeta = serde_json::from_str(&extras.value).unwrap();
+            if meta.role.starts_with("Laser") {
+                cmd.entity(ent).insert(NoCollider);
+                continue;
+            }
+        }
         if meshes_came_from_gltf.contains(mesh_id) {
             let mesh = bevy_meshes.get(mesh_id).unwrap();
             let collider =
