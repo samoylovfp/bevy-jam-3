@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use bevy::{
     gltf::{GltfExtras, GltfMesh},
     prelude::*,
@@ -33,8 +35,32 @@ pub fn spawn_menu_screen(mut commands: Commands, asset_server: Res<AssetServer>)
     ));
 }
 
-#[derive(Component)]
-pub struct ExitLevel;
+/// Used as both
+/// - component for the sensor
+/// - event
+#[allow(non_camel_case_types)]
+#[derive(Component, Clone, strum::EnumString)]
+pub enum GameTrigger {
+    ExitLevel,
+    Sensor_04,
+    Speaker(Vec<String>),
+    LaserWidth,
+    LaserWidth_04,
+    LaserHeight,
+    LaserHeight_11,
+}
+
+impl GameTrigger {
+    fn from_prop(s: &str) -> Result<Self, <Self as FromStr>::Err> {
+        if s.starts_with("Speaker") {
+            let (_, replicas) = s.split_once("_").expect("'Speaker' then underscore");
+            let replicas = replicas.split("_").map(String::from).collect();
+            Ok(GameTrigger::Speaker(replicas))
+        } else {
+            Self::from_str(s)
+        }
+    }
+}
 
 pub fn apply_gltf_extras(
     mut cmd: Commands,
@@ -47,18 +73,34 @@ pub fn apply_gltf_extras(
         let meta: NodeMeta = serde_json::from_str(&gltf_extras.value).unwrap();
         info!("Found role {:?}", meta.role);
 
+        if let Ok(trigger) = GameTrigger::from_prop(&meta.role) {
+            for child in ent_children {
+                let Ok(mesh_handle) = bevy_mesh_components.get(*child) else {continue};
+                let mesh = bevy_meshes.get(mesh_handle).unwrap();
+                let collider = Collider::from_bevy_mesh(mesh, &default()).unwrap();
+                cmd.spawn((
+                    trigger.clone(),
+                    collider,
+                    *transform,
+                    Sensor,
+                    ActiveEvents::COLLISION_EVENTS,
+                    GlobalTransform::default(),
+                ));
+            }
+            cmd.entity(ent).despawn_recursive();
+            return;
+        }
+
         match meta.role.as_str() {
             "PlayerSpawn" => {
                 player_spawn_info.single_mut().0 .0 = transform.translation;
                 cmd.entity(ent).despawn_recursive()
             }
-
             "PlayerSpawnLookAt" => {
                 player_spawn_info.single_mut().0 .1 = transform.translation;
                 cmd.entity(ent).despawn_recursive()
             }
             "Collider" => {
-                let mut coll_created = false;
                 for child in ent_children {
                     let Ok(mesh_handle) = bevy_mesh_components.get(*child) else {continue};
                     let mesh = bevy_meshes.get(mesh_handle).unwrap();
@@ -69,27 +111,8 @@ pub fn apply_gltf_extras(
                         *transform,
                         GlobalTransform::default(),
                     ));
-                    coll_created = true;
                 }
-                if coll_created {
-                    cmd.entity(ent).despawn_recursive()
-                }
-            }
-            "ExitLevel" => {
-                for child in ent_children {
-                    let Ok(mesh_handle) = bevy_mesh_components.get(*child) else {continue};
-                    let mesh = bevy_meshes.get(mesh_handle).unwrap();
-                    let collider = Collider::from_bevy_mesh(mesh, &default()).unwrap();
-                    cmd.spawn((
-                        ExitLevel,
-                        collider,
-                        *transform,
-                        Sensor,
-                        ActiveEvents::COLLISION_EVENTS,
-                        GlobalTransform::default(),
-                    ));
-                }
-                cmd.entity(ent).despawn_recursive();
+                cmd.entity(ent).despawn_recursive()
             }
             r => warn!("Unknown role {r}"),
         }

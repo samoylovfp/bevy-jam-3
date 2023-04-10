@@ -62,6 +62,8 @@ fn main() {
         .add_startup_system(setup_postpro.pipe(setup_player))
         .add_state::<AppState>()
         .add_system(grab_mouse)
+        .add_system(check_triggers)
+        .add_event::<GameTrigger>()
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
         .insert_resource(CollidersLoaded(false))
         .add_startup_system(spawn_gltf)
@@ -79,7 +81,7 @@ fn main() {
                 game::debug_pos,
                 game::change_size,
                 game::back_to_menu,
-                game::exit_level,
+                game::process_triggers,
                 post_processing::change_blur,
             )
                 .in_set(OnUpdate(AppState::InGame)),

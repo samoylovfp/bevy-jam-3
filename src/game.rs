@@ -2,7 +2,7 @@ use bevy::{input::mouse::MouseMotion, prelude::*};
 use bevy_rapier3d::prelude::{CollisionEvent, ExternalImpulse, Velocity};
 
 use crate::{
-    menu::ExitLevel, post_processing::GameCamera, AppState, CameraMenu, PlayerBody, PlayerHead,
+    menu::GameTrigger, post_processing::GameCamera, AppState, CameraMenu, PlayerBody, PlayerHead,
     PlayerLegs, PlayerSpawn,
 };
 
@@ -198,21 +198,33 @@ pub(crate) fn touch_ground(
     }
 }
 
-pub(crate) fn exit_level(
+pub(crate) fn check_triggers(
     mut collision_events: EventReader<CollisionEvent>,
     player: Query<Entity, With<PlayerBody>>,
-    exit: Query<Entity, With<ExitLevel>>,
-    mut next_state: ResMut<NextState<AppState>>,
+    triggers: Query<&GameTrigger>,
+    mut trigger_events: EventWriter<GameTrigger>,
 ) {
     let player = player.single();
-    let exit = exit.single();
     for event in collision_events.iter() {
         match event {
-            CollisionEvent::Started(e1, e2, _)
-                if (e1 == &exit || e2 == &exit) && (e1 == &player || e2 == &player) =>
-            {
-                next_state.set(AppState::Finish);
+            CollisionEvent::Started(e1, e2, _) if (e1 == &player || e2 == &player) => {
+                let trigger = triggers.get(*e1).or(triggers.get(*e2));
+                if let Ok(t) = trigger {
+                    trigger_events.send(t.clone())
+                }
             }
+            _ => {}
+        }
+    }
+}
+
+pub(crate) fn process_triggers(
+    mut events: EventReader<GameTrigger>,
+    mut next_state: ResMut<NextState<AppState>>,
+) {
+    for event in events.iter() {
+        match event {
+            GameTrigger::ExitLevel => next_state.set(AppState::Finish),
             _ => {}
         }
     }
