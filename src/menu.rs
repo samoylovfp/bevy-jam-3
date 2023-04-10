@@ -106,10 +106,10 @@ pub fn apply_gltf_extras(
             } else {
                 if meta.role.contains("_04") {
                     cmd.entity(ent)
-                        .insert((Visibility::Hidden, ShowOn(GameState::TurnOnLaser1)));
+                        .insert((Visibility::Hidden, ShowOn(GameState::TurnOnLaser2)));
                 } else if meta.role.contains("_11") {
                     cmd.entity(ent)
-                        .insert((Visibility::Hidden, ShowOn(GameState::TurnOnLaser2)));
+                        .insert((Visibility::Hidden, ShowOn(GameState::TurnOnLaser1)));
                 }
                 cmd.entity(ent).insert(Processed);
             }

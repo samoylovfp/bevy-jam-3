@@ -279,15 +279,12 @@ pub(crate) fn process_triggers(
             }
             GameTrigger::LaserWidth | GameTrigger::LaserWidth_04 => {
                 if matches!(event, GameTrigger::LaserWidth_04)
-                    && matches!(*game_state, GameState::TurnOnLaser1)
+                    && matches!(*game_state, GameState::TurnOnLaser2)
                 {
-                    *game_state = GameState::Laser1EffectDiscussion
+                    *game_state = GameState::Escape;
                 }
                 match *game_state {
-                    GameState::TurnOnLaser1
-                    | GameState::Laser1EffectDiscussion
-                    | GameState::TurnOnLaser2
-                    | GameState::Escape => {
+                    GameState::TurnOnLaser2 | GameState::Escape => {
                         laser_event.send(LaserTrigger::Width);
                     }
                     _ => {}
@@ -295,12 +292,15 @@ pub(crate) fn process_triggers(
             }
             GameTrigger::LaserHeight | GameTrigger::LaserHeight_11 => {
                 if matches!(event, GameTrigger::LaserHeight_11)
-                    && matches!(*game_state, GameState::TurnOnLaser2)
+                    && matches!(*game_state, GameState::TurnOnLaser1)
                 {
-                    *game_state = GameState::Escape;
+                    *game_state = GameState::Laser1EffectDiscussion;
                 }
                 match *game_state {
-                    GameState::TurnOnLaser2 | GameState::Escape => {
+                    GameState::TurnOnLaser1
+                    | GameState::Laser1EffectDiscussion
+                    | GameState::TurnOnLaser2
+                    | GameState::Escape => {
                         laser_event.send(LaserTrigger::Height);
                     }
                     _ => {}
