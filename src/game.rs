@@ -98,6 +98,8 @@ pub fn debug_pos(
 pub struct PlayerEffects {
     pub height: f32,
     pub width: f32,
+    pub height_timer: Timer,
+    pub width_timer: Timer,
     pub height_state: GrowthState,
     pub width_state: GrowthState,
 }
@@ -110,9 +112,17 @@ pub enum GrowthState {
     Decreasing,
 }
 
+#[derive(Component, PartialEq)]
+pub enum LaserTrigger {
+	Height,
+	Width,
+}
+
 pub fn change_size(
     keyboard: Res<Input<KeyCode>>,
     mut body: Query<(&mut Transform, &mut PlayerEffects), With<PlayerBody>>,
+	time: Res<Time>,
+	mut events: EventReader<LaserTrigger>,
 ) {
     let (mut body, mut effects) = body.single_mut();
 
@@ -138,6 +148,16 @@ pub fn change_size(
         _ => (),
     }
 
+	effects.height_timer.tick(time.delta());
+	effects.width_timer.tick(time.delta());
+
+	if effects.height_timer.just_finished() {
+		effects.height_state = GrowthState::Increasing;
+	}
+	if effects.width_timer.just_finished() {
+		effects.width_state = GrowthState::Increasing;
+	}
+
     match effects.width_state {
         GrowthState::Increasing => {
             body.scale.x += 0.02;
@@ -159,20 +179,26 @@ pub fn change_size(
         }
         _ => (),
     }
-
-    if keyboard.pressed(KeyCode::B) {
-        match effects.height_state {
-            GrowthState::Small => effects.height_state = GrowthState::Increasing,
-            GrowthState::Big => effects.height_state = GrowthState::Decreasing,
-            _ => (),
-        };
+	for event in events.iter() {
+		if *event == LaserTrigger::Height {
+			effects.height_state = GrowthState::Decreasing;
+			effects.height_timer.reset();
+			effects.height_timer.unpause();
+		} else if *event == LaserTrigger::Width {
+			effects.width_state = GrowthState::Decreasing;
+			effects.width_timer.reset();
+			effects.width_timer.unpause();
+		}
+	}
+    if keyboard.pressed(KeyCode::B) && effects.height_state == GrowthState::Big {
+		effects.height_state = GrowthState::Decreasing;
+		effects.height_timer.reset();
+		effects.height_timer.unpause();
     }
-    if keyboard.pressed(KeyCode::N) {
-        match effects.width_state {
-            GrowthState::Small => effects.width_state = GrowthState::Increasing,
-            GrowthState::Big => effects.width_state = GrowthState::Decreasing,
-            _ => (),
-        };
+    if keyboard.pressed(KeyCode::N) && effects.width_state == GrowthState::Big {
+		effects.width_state = GrowthState::Decreasing;
+		effects.width_timer.reset();
+		effects.width_timer.unpause();
     }
 }
 

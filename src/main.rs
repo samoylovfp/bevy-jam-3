@@ -23,6 +23,7 @@ use bevy_rapier3d::prelude::Sensor;
 use bevy_rapier3d::prelude::{
     Collider, ExternalImpulse, LockedAxes, NoUserData, RapierPhysicsPlugin, RigidBody, Velocity,
 };
+use game::LaserTrigger;
 use game::check_triggers;
 use game::GameState;
 use game::GrowthState;
@@ -70,6 +71,7 @@ fn main() {
         .add_system(grab_mouse)
         .add_system(check_triggers)
         .add_event::<GameTrigger>()
+		.add_event::<LaserTrigger>()
         .add_event::<hud::SubtitleTrigger>()
         .add_plugin(AudioPlugin)
         .add_plugin(RapierPhysicsPlugin::<NoUserData>::default())
@@ -95,7 +97,6 @@ fn main() {
                 post_processing::change_blur,
                 hud::update_body_icon,
                 hud::update_subtitle,
-                // hud::test_subtitle,
             )
                 .in_set(OnUpdate(AppState::InGame)),
         )
@@ -137,6 +138,9 @@ fn setup_player(In(RenderTargetImage(render_target)): In<RenderTargetImage>, mut
     // so legs keep in contact with surface while skipping
     let leg_down_margin = 0.1;
 
+	let mut size_timer = Timer::from_seconds(2.0, TimerMode::Once);
+	size_timer.pause();
+
     cmd.spawn((
         PlayerBody,
         PlayerSpawn((
@@ -154,6 +158,8 @@ fn setup_player(In(RenderTargetImage(render_target)): In<RenderTargetImage>, mut
         PlayerEffects {
             height: 1.0,
             width: 1.0,
+			height_timer: size_timer.clone(),
+			width_timer: size_timer,
             height_state: GrowthState::Big,
             width_state: GrowthState::Big,
         },
