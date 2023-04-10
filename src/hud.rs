@@ -114,12 +114,9 @@ pub fn update_subtitle(mut events: EventReader<SubtitleTrigger>, mut subtitle: Q
 
 pub fn test_subtitle(mut events: EventWriter<SubtitleTrigger>, keyboard: Res<Input<KeyCode>>) {
 	if keyboard.pressed(KeyCode::T) {
-		events.send(SubtitleTrigger("TTTTTT".to_string()));
+		events.send(SubtitleTrigger("TEST".to_string()));
 	}
 	if keyboard.pressed(KeyCode::Y) {
-		events.send(SubtitleTrigger("YYYYYY".to_string()));
-	}
-	if keyboard.pressed(KeyCode::U) {
 		events.send(SubtitleTrigger("".to_string()));
 	}
 }
