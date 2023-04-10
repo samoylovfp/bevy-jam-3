@@ -68,6 +68,7 @@ fn start_music(asset_server: Res<AssetServer>, audio: Res<AudioChannel<BgMusic>>
     audio
         .play(asset_server.load("sounds/bvj-3-space-lab.ogg"))
         .looped();
+    audio.set_volume(0.2);
 }
 
 #[derive(Resource)]
@@ -86,7 +87,7 @@ fn first_dialogue(
     let play_first_phase_dialog =
         |n: usize| audio_channel.play(asset_server.load(first_phase_dialogue_file(n)));
 
-    info!("playing: {}", audio_channel.is_playing_sound());
+    // info!("playing: {}", audio_channel.is_playing_sound());
 
     let new_state = match *playing {
         DialoguePlaying::None => {
