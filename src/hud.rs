@@ -104,19 +104,10 @@ pub fn update_body_icon(
 }
 
 #[derive(Component)]
-pub struct SubtitleTrigger(String);
+pub struct SubtitleTrigger(pub String);
 
 pub fn update_subtitle(mut events: EventReader<SubtitleTrigger>, mut subtitle: Query<&mut Text, With<Subtitle>>) {
 	for event in events.iter() {
         subtitle.single_mut().sections[0].value = event.0.clone();
     }
-}
-
-pub fn test_subtitle(mut events: EventWriter<SubtitleTrigger>, keyboard: Res<Input<KeyCode>>) {
-	if keyboard.pressed(KeyCode::T) {
-		events.send(SubtitleTrigger("TEST".to_string()));
-	}
-	if keyboard.pressed(KeyCode::Y) {
-		events.send(SubtitleTrigger("".to_string()));
-	}
 }

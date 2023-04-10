@@ -1,10 +1,8 @@
-use bevy::prelude::{
-    info, AssetServer, Handle, IntoSystemAppConfig, IntoSystemConfig, OnExit, OnUpdate, Plugin,
-    Res, ResMut, Resource,
-};
+use bevy::prelude::{info, AssetServer, Handle, IntoSystemAppConfig, IntoSystemConfig, OnExit, OnUpdate, Plugin, Res, ResMut, Resource, EventWriter};
 use bevy_kira_audio::{AudioApp, AudioChannel, AudioControl, AudioSource};
 
 use crate::AppState;
+use crate::hud::SubtitleTrigger;
 
 pub(crate) struct AudioPlugin;
 
@@ -77,15 +75,17 @@ enum DialoguePlaying {
     Playing(usize),
 }
 
+static SUBTITLES: &str = include_str!("../assets/text/subtitles.txt");
+
 fn first_dialogue(
     asset_server: Res<AssetServer>,
     mut playing: ResMut<DialoguePlaying>,
     audio_channel: Res<AudioChannel<SpawnRoomSpeaker>>,
+    mut events: EventWriter<SubtitleTrigger>
 ) {
     let first_phase_dialogue_file = |n: usize| String::from("sounds/dialogues/") + FIRST_PHASE[n];
     let play_first_phase_dialog =
         |n: usize| audio_channel.play(asset_server.load(first_phase_dialogue_file(n)));
-
     // info!("playing: {}", audio_channel.is_playing_sound());
 
     let new_state = match *playing {
@@ -95,6 +95,8 @@ fn first_dialogue(
             DialoguePlaying::StartedButNotPlaying(0)
         }
         DialoguePlaying::StartedButNotPlaying(n) => {
+            let subtit = SUBTITLES.lines().nth(n).unwrap();
+            events.send(SubtitleTrigger(subtit.to_string()));
             if audio_channel.is_playing_sound() {
                 DialoguePlaying::Playing(n)
             } else {
