@@ -4,6 +4,8 @@ You wake up in an unknown facility B.L.A.S.I.C, not remembering how you got here
 
 [Play it on itch.io](https://sorseg.itch.io/blasic)
 
+<img src="demo/screen01.jpg">
+
 ## Controls
 use wasd to walk, mouse to look around, space for jumping
 
@@ -18,6 +20,7 @@ use wasd to walk, mouse to look around, space for jumping
 
 [Julia Bubnova](https://github.com/denolia): music, voice
 
+<img src="demo/screen02.jpg">
 ## Links
 colliders from gltf mesh: https://discord.com/channels/691052431525675048/937158127491633152/1092888876940546059
 
