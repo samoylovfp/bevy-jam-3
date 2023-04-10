@@ -35,7 +35,6 @@ impl Plugin for AudioPlugin {
 
 // spawn
 static FIRST_PHASE: &[&str] = &["01-doc1.ogg", "02-bvj.ogg", "03-doc1.ogg"];
-// static FIRST_PHASE: &[&str] = &["01-doc1.ogg"];
 
 // enter the test chamber
 static SECOND_PHASE: &[&str] = &[
