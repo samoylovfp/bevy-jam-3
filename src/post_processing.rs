@@ -1,7 +1,7 @@
 use bevy::{
     prelude::{
         default, shape, Assets, Camera, Camera2dBundle, Commands, Component, Handle, Image, Mesh,
-        Query, ResMut, Transform, Vec2, Vec3, Color, Vec4,
+        Query, ResMut, Transform, Vec2, Vec3, Vec4,
     },
     reflect::TypeUuid,
     render::{
